@@ -8,6 +8,17 @@ export function buildApp(): FastifyInstance {
     logger: true,
   });
 
+  // Register Swagger (OpenAPI)
+  app.register(require('@fastify/swagger'), {
+    openapi: {
+      openapi: '3.1.0',
+      info: { title: 'SchemaFlow API', version: '1.0.0' },
+    }
+  });
+  app.register(require('@fastify/swagger-ui'), {
+    routePrefix: '/api/docs',
+  });
+
   // Register Middleware
   app.register(cors, {
     origin: config.corsOrigin,
