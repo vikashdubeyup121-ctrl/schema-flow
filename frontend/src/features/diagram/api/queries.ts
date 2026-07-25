@@ -22,3 +22,21 @@ export const diagramsByProjectQueryOptions = (projectId: string) =>
     staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
+
+async function fetchDiagramById(diagramId: string): Promise<Diagram> {
+  if (Features.mockData) {
+    const diag = MOCK_DIAGRAMS.find((d) => d.id === diagramId);
+    if (!diag) throw new Error('Not found');
+    return Promise.resolve(diag);
+  }
+  const response = await apiClient.get<DiagramResponse>(`/diagrams/${diagramId}`);
+  return mapDiagramResponseToDiagram(response.data);
+}
+
+export const diagramQueryOptions = (diagramId: string) =>
+  queryOptions({
+    queryKey: diagramKeys.detail(diagramId),
+    queryFn: () => fetchDiagramById(diagramId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!diagramId,
+  });

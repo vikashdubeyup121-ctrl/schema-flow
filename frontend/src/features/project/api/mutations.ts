@@ -12,6 +12,7 @@ export async function createProject(name: string): Promise<Project> {
       id: crypto.randomUUID(),
       name,
       ownerId: 'mock-user-001',
+      diagramCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -30,7 +31,7 @@ export async function updateProject(id: string, name: string): Promise<Project> 
     queryClient.setQueryData<Project[]>(projectKeys.lists(), (prev = []) =>
       prev.map((p) => (p.id === id ? { ...p, name, updatedAt: new Date().toISOString() } : p)),
     );
-    return Promise.resolve({ id, name, ownerId: 'mock-user-001', createdAt: '', updatedAt: '' });
+    return Promise.resolve({ id, name, ownerId: 'mock-user-001', diagramCount: 0, createdAt: '', updatedAt: '' });
   }
   const body: UpdateProjectRequest = { name };
   const response = await apiClient.patch<ProjectResponse>(`/projects/${id}`, body);

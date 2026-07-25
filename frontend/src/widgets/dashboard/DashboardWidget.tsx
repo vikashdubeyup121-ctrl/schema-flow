@@ -5,6 +5,7 @@ import { Avatar } from '@/shared/components/Avatar';
 import { Button } from '@/shared/components/Button';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import {
   AddIcon,
   ProjectIcon,
@@ -54,11 +55,12 @@ function DiagramSkeleton(): ReactNode {
 interface DiagramSectionProps {
   projectId: string;
   onNavigate: (diagramId: string) => void;
+  onDeleteRequest: (diagramId: string, projectId: string) => void;
 }
 
-function DiagramSection({ projectId, onNavigate }: DiagramSectionProps): ReactNode {
+function DiagramSection({ projectId, onNavigate, onDeleteRequest }: DiagramSectionProps): ReactNode {
   const { diagrams, isLoading, isError } = useDiagrams(projectId);
-  const { create, update, remove } = useDiagramMutations();
+  const { create, update } = useDiagramMutations();
   const [createOpen, setCreateOpen] = useState(false);
 
   const handleCreate = useCallback(
@@ -100,7 +102,7 @@ function DiagramSection({ projectId, onNavigate }: DiagramSectionProps): ReactNo
             onRename={(name) =>
               update.mutate({ id: diagram.id, name, projectId })
             }
-            onDelete={() => remove.mutate({ id: diagram.id, projectId })}
+            onDelete={() => onDeleteRequest(diagram.id, projectId)}
           />
         ))}
 
@@ -137,8 +139,12 @@ export function DashboardWidget(): ReactNode {
   const navigate = useNavigate();
   const { projects, isLoading, isError, refetch } = useProjects();
   const { create, update, remove } = useProjectMutations();
+  const { remove: removeDiagram } = useDiagramMutations();
   const { selectedProjectId, setSelectedProject } = useProjectStore();
+  
   const [createOpen, setCreateOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [diagramToDelete, setDiagramToDelete] = useState<{ id: string; projectId: string } | null>(null);
 
   // Pre-fetch diagram counts — diagrams are loaded lazily per project
   // diagramCount is shown on each project card from the query cache if available
@@ -255,11 +261,11 @@ export function DashboardWidget(): ReactNode {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  diagramCount={0}
+                  diagramCount={project.diagramCount}
                   isSelected={selectedProjectId === project.id}
                   onSelect={() => handleSelectProject(project.id)}
                   onRename={(name) => update.mutate({ id: project.id, name })}
-                  onDelete={() => remove.mutate(project.id)}
+                  onDelete={() => setProjectToDelete(project.id)}
                 />
               ))}
             </div>
@@ -282,6 +288,7 @@ export function DashboardWidget(): ReactNode {
                   <DiagramSection
                     projectId={selectedProjectId}
                     onNavigate={handleNavigateToDiagram}
+                    onDeleteRequest={(id, projectId) => setDiagramToDelete({ id, projectId })}
                   />
                 </div>
               </section>
@@ -296,6 +303,40 @@ export function DashboardWidget(): ReactNode {
         onClose={() => setCreateOpen(false)}
         onCreate={handleCreateProject}
         isLoading={create.isPending}
+      />
+
+      {/* Delete Confirmation Modals */}
+      <ConfirmDialog
+        open={projectToDelete !== null}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (projectToDelete) {
+            remove.mutate(projectToDelete);
+            setProjectToDelete(null);
+            if (selectedProjectId === projectToDelete) {
+              setSelectedProject(null);
+            }
+          }
+        }}
+        onCancel={() => setProjectToDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={diagramToDelete !== null}
+        title="Delete Diagram"
+        description="Are you sure you want to delete this diagram? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (diagramToDelete) {
+            removeDiagram.mutate(diagramToDelete);
+            setDiagramToDelete(null);
+          }
+        }}
+        onCancel={() => setDiagramToDelete(null)}
       />
     </div>
   );

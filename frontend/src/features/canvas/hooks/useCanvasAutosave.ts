@@ -23,12 +23,17 @@ export function useCanvasAutosave({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
 
+  const onSaveRef = useRef(onSave);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
   const flush = useCallback(async () => {
     if (isSavingRef.current) return;
     isSavingRef.current = true;
     setStatus('saving');
     try {
-      await onSave();
+      await onSaveRef.current();
       setLastSavedAt(new Date());
       setStatus('saved');
     } catch (err) {
@@ -37,7 +42,7 @@ export function useCanvasAutosave({
     } finally {
       isSavingRef.current = false;
     }
-  }, [onSave]);
+  }, []);
 
   useEffect(() => {
     if (!isDirty) return;

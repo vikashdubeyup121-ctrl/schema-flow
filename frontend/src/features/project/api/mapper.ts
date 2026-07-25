@@ -5,8 +5,9 @@ export function mapProjectResponseToProject(dto: ProjectResponse): Project {
   return {
     id: dto.id,
     name: dto.name,
-    ownerId: dto.owner_id,
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
+    ownerId: dto.ownerId,
+    diagramCount: dto.diagramCount,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   };
 }

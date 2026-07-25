@@ -9,8 +9,8 @@ export interface JwtPayload {
 }
 
 export class JwtService {
-  sign(payload: JwtPayload, expiresIn = '15m'): string {
-    const options: SignOptions = { expiresIn: expiresIn as any };
+  sign(payload: JwtPayload, expiresIn?: string | number): string {
+    const options: SignOptions = { expiresIn: expiresIn ?? Math.floor(config.jwtExpiration / 1000) };
     return jwt.sign(payload as any, config.jwtSecret, options);
   }
 

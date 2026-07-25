@@ -5,8 +5,9 @@ export function mapDiagramResponseToDiagram(dto: DiagramResponse): Diagram {
   return {
     id: dto.id,
     name: dto.name,
-    projectId: dto.project_id,
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
+    projectId: dto.projectId,
+    dslText: dto.dslText,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   };
 }

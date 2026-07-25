@@ -61,7 +61,7 @@ export class DiagramRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string }): Promise<Diagram> {
+  async update(id: string, data: { name?: string; description?: string; dslText?: string }): Promise<Diagram> {
     return this.prisma.diagram.update({
       where: { id },
       data,

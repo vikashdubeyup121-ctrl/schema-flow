@@ -1,9 +1,10 @@
 export interface ProjectResponse {
   id: string;
   name: string;
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
+  ownerId: string;
+  diagramCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateProjectRequest {

@@ -7,6 +7,7 @@ export interface DiagramResponse {
   description?: string | null;
   latestPublishedVersionId: string | null;
   activeDraftVersionId: string | null;
+  dslText: string | null;
   viewport: {
     x: number;
     y: number;
@@ -25,6 +26,7 @@ export class DiagramMapper {
       description: diagram.description,
       latestPublishedVersionId: diagram.latestPublishedVersionId,
       activeDraftVersionId: diagram.activeDraftVersionId,
+      dslText: diagram.dslText,
       viewport: {
         x: diagram.viewportX,
         y: diagram.viewportY,

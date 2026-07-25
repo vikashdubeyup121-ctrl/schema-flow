@@ -12,6 +12,8 @@ interface UseEditorSyncOptions {
   edges: Edge[];
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
+  enabled?: boolean;
+  onDirty?: () => void;
 }
 
 interface UseEditorSyncReturn {
@@ -20,22 +22,23 @@ interface UseEditorSyncReturn {
   syncCanvasToEditor: (nodes: Node[], edges: Edge[]) => void;
 }
 
-export function useEditorSync({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-}: UseEditorSyncOptions): UseEditorSyncReturn {
+export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncReturn {
   const { dslText, setDslText } = useEditorStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Prevents circular updates: editor → canvas → editor
   const isSyncingFromEditorRef = useRef(false);
   const isSyncingFromCanvasRef = useRef(false);
 
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   // Editor text changed → parse → update canvas (debounced)
   const onDslChange = useCallback(
     (text: string) => {
       setDslText(text);
+      if (optionsRef.current.onDirty) optionsRef.current.onDirty();
 
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
@@ -43,15 +46,15 @@ export function useEditorSync({
         isSyncingFromEditorRef.current = true;
         try {
           const ast = parseDsl(text);
-          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, nodes, edges);
-          onNodesChange(newNodes);
-          onEdgesChange(newEdges);
+          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges);
+          optionsRef.current.onNodesChange(newNodes);
+          optionsRef.current.onEdgesChange(newEdges);
         } finally {
           isSyncingFromEditorRef.current = false;
         }
       }, DSL_DEBOUNCE_MS);
     },
-    [setDslText, nodes, edges, onNodesChange, onEdgesChange],
+    [setDslText],
   );
 
   // Canvas changed externally (toolbar add table, etc.) → serialize → update editor text
@@ -69,20 +72,20 @@ export function useEditorSync({
     [setDslText],
   );
 
-  // Sync canvas from the initial DSL on first mount
+  // Sync canvas from the initial DSL on first mount or when enabled becomes true
   useEffect(() => {
+    if (options.enabled === false) return;
+    
     isSyncingFromEditorRef.current = true;
     try {
       const ast = parseDsl(dslText);
       const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], []);
-      onNodesChange(newNodes);
-      onEdgesChange(newEdges);
+      optionsRef.current.onNodesChange(newNodes);
+      optionsRef.current.onEdgesChange(newEdges);
     } finally {
       isSyncingFromEditorRef.current = false;
     }
-    // Intentionally only on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [options.enabled]);
 
   return { dslText, onDslChange, syncCanvasToEditor };
 }

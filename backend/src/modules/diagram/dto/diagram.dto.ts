@@ -8,6 +8,7 @@ export const CreateDiagramSchema = z.object({
 export const UpdateDiagramSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100).optional(),
   description: z.string().max(500).optional(),
+  dslText: z.string().optional(),
 });
 
 export const ViewportSchema = z.object({

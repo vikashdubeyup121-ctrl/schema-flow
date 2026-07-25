@@ -29,8 +29,10 @@ export function buildApp(): FastifyInstance {
 
   // Register Middleware
   app.register(cors, {
-    origin: config.corsOrigin,
+    origin: config.corsOrigin === '*' ? true : config.corsOrigin,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
   app.register(helmet);
   app.register(require('@fastify/cookie'));

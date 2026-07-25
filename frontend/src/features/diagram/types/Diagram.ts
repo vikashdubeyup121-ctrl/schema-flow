@@ -1,7 +1,9 @@
 export interface Diagram {
   id: string;
-  name: string;
   projectId: string;
+  name: string;
+  description?: string;
+  dslText?: string | null;
   createdAt: string;
   updatedAt: string;
 }

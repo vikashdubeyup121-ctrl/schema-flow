@@ -1,4 +1,7 @@
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { diagramQueryOptions } from '@/features/diagram/api/queries';
+import { updateDiagram } from '@/features/diagram/api/mutations';
 import {
   ReactFlowProvider,
   useReactFlow,
@@ -38,7 +41,7 @@ interface WorkspaceCanvasInnerProps {
   diagramId: string;
 }
 
-function WorkspaceCanvasInner({ diagramId: _diagramId }: WorkspaceCanvasInnerProps): ReactNode {
+function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNode {
   const { zoomIn, zoomOut, fitView, screenToFlowPosition } = useReactFlow();
   const { x: menuX, y: menuY } = useCanvasContextMenuStore();
   const selectMultipleTables = useCanvasSelectionStore((s) => s.selectMultipleTables);
@@ -46,11 +49,31 @@ function WorkspaceCanvasInner({ diagramId: _diagramId }: WorkspaceCanvasInnerPro
   const width = useEditorStore((s) => s.width);
   const toggleSidebar = useEditorStore((s) => s.toggleSidebar);
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
+  const setDslText = useEditorStore((s) => s.setDslText);
+
+  // Fetch diagram data
+  const { data: diagram, isLoading } = useQuery(diagramQueryOptions(diagramId));
 
   // Start empty — useEditorSync populates from DSL on mount
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isDirty, setIsDirty] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Initialize DSL from DB when loaded
+  useEffect(() => {
+    if (diagram && !hasInitialized) {
+      if (diagram.dslText) {
+        setDslText(diagram.dslText);
+      } else {
+        // If it's a completely new diagram, it will just use whatever is in the store 
+        // (which might be the DEFAULT_DSL, or empty). We can leave it as DEFAULT_DSL.
+        // But we MUST mark it dirty so it gets saved to the backend!
+        setIsDirty(true);
+      }
+      setHasInitialized(true);
+    }
+  }, [diagram, hasInitialized, setDslText]);
 
   const { dslText, onDslChange, syncCanvasToEditor } = useEditorSync({
     nodes,
@@ -63,6 +86,8 @@ function WorkspaceCanvasInner({ diagramId: _diagramId }: WorkspaceCanvasInnerPro
       setEdges(newEdges);
       syncNodesToFeatureStores(nodes, newEdges);
     },
+    enabled: hasInitialized, // Only sync after initializing from DB
+    onDirty: () => setIsDirty(true),
   });
 
   const handleNodesChange = useCallback(
@@ -113,7 +138,9 @@ function WorkspaceCanvasInner({ diagramId: _diagramId }: WorkspaceCanvasInnerPro
   const { status: autosaveStatus, lastSavedAt } = useCanvasAutosave({
     isDirty,
     onSave: async () => {
-      // TODO: call diagram save API when backend is ready
+      if (diagram) {
+        await updateDiagram(diagramId, undefined, diagram.projectId, dslText);
+      }
       setIsDirty(false);
     },
   });
@@ -310,6 +337,10 @@ function WorkspaceCanvasInner({ diagramId: _diagramId }: WorkspaceCanvasInnerPro
   }, [fitView]);
 
   const tableCount = nodes.filter((n) => n.type === 'table').length;
+
+  if (isLoading || !hasInitialized) {
+    return <div className="flex items-center justify-center w-full h-full text-muted-foreground">Loading diagram...</div>;
+  }
 
   return (
     <div className="flex w-full h-full overflow-hidden">

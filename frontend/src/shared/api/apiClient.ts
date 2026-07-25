@@ -22,7 +22,7 @@ function createApiClient(): AxiosInstance {
   client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
     Logger.debug(`${config.method?.toUpperCase()} ${config.url}`, 'ApiClient');
     return config;

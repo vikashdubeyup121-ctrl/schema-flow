@@ -86,7 +86,9 @@ export function ProjectCard({
           {menuOpen && (
             <div className="absolute right-0 top-8 w-36 bg-card border border-border rounded-lg shadow-xl py-1 z-10">
               <button
+                type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   setMenuOpen(false);
                   setRenameValue(project.name);
@@ -98,7 +100,9 @@ export function ProjectCard({
                 Rename
               </button>
               <button
+                type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   setMenuOpen(false);
                   onDelete();

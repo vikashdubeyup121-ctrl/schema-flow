@@ -43,8 +43,13 @@ function MockAuthProvider({ children }: AuthProviderProps): ReactNode {
 }
 
 function RealAuthProvider({ children }: AuthProviderProps): ReactNode {
-  const { data: user, isLoading } = useQuery({ ...currentUserQueryOptions });
+  const { data: user, isLoading, error } = useQuery({ ...currentUserQueryOptions });
   const { forceLogout, triggerForceLogout, resetForceLogout } = useAuthStore();
+  
+  // If there's an error but it's not a 401 (e.g. backend is down / PM2 reloading), 
+  // we assume the user might still be authenticated based on the token in localStorage.
+  const hasToken = !!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const isNetworkError = error && (error as any).status !== 401;
 
   useEffect(() => {
     registerForceLogoutHandler(triggerForceLogout);
@@ -73,7 +78,7 @@ function RealAuthProvider({ children }: AuthProviderProps): ReactNode {
   const value: AuthContextValue = {
     user: user ?? null,
     isLoading,
-    isAuthenticated: user !== undefined,
+    isAuthenticated: user !== undefined || (isNetworkError && hasToken),
     logout,
   };
 

@@ -1,16 +1,18 @@
 export interface DiagramResponse {
   id: string;
   name: string;
-  project_id: string;
-  created_at: string;
-  updated_at: string;
+  projectId: string;
+  dslText?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateDiagramRequest {
   name: string;
-  project_id: string;
+  projectId: string;
 }
 
 export interface UpdateDiagramRequest {
-  name: string;
+  name?: string;
+  dslText?: string;
 }

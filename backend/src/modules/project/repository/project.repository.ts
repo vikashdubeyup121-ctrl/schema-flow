@@ -15,16 +15,21 @@ export class ProjectRepository {
     });
   }
 
-  async findByOwner(ownerId: string, skip: number, take: number): Promise<Project[]> {
+  async findByOwner(ownerId: string, skip: number, take: number): Promise<any[]> {
     return this.prisma.project.findMany({
       where: { ownerId, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       skip,
       take,
+      include: {
+        _count: {
+          select: { diagrams: { where: { deletedAt: null } } },
+        },
+      },
     });
   }
 
-  async searchByOwner(ownerId: string, query: string, skip: number, take: number): Promise<Project[]> {
+  async searchByOwner(ownerId: string, query: string, skip: number, take: number): Promise<any[]> {
     return this.prisma.project.findMany({
       where: {
         ownerId,
@@ -34,6 +39,11 @@ export class ProjectRepository {
       orderBy: { updatedAt: 'desc' },
       skip,
       take,
+      include: {
+        _count: {
+          select: { diagrams: { where: { deletedAt: null } } },
+        },
+      },
     });
   }
 

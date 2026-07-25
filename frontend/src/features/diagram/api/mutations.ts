@@ -21,21 +21,21 @@ export async function createDiagram(name: string, projectId: string): Promise<Di
     ]);
     return Promise.resolve(mock);
   }
-  const body: CreateDiagramRequest = { name, project_id: projectId };
-  const response = await apiClient.post<DiagramResponse>('/diagrams', body);
+  const body: CreateDiagramRequest = { name, projectId };
+  const response = await apiClient.post<DiagramResponse>(`/projects/${projectId}/diagrams`, body);
   const diagram = mapDiagramResponseToDiagram(response.data);
   await queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(projectId) });
   return diagram;
 }
 
-export async function updateDiagram(id: string, name: string, projectId: string): Promise<Diagram> {
+export async function updateDiagram(id: string, name: string | undefined, projectId: string, dslText?: string): Promise<Diagram> {
   if (Features.mockData) {
     queryClient.setQueryData<Diagram[]>(diagramKeys.byProject(projectId), (prev = []) =>
-      prev.map((d) => (d.id === id ? { ...d, name, updatedAt: new Date().toISOString() } : d)),
+      prev.map((d) => (d.id === id ? { ...d, name: name || d.name, dslText, updatedAt: new Date().toISOString() } : d)),
     );
-    return Promise.resolve({ id, name, projectId, createdAt: '', updatedAt: '' });
+    return Promise.resolve({ id, name: name || '', projectId, dslText, createdAt: '', updatedAt: '' });
   }
-  const body: UpdateDiagramRequest = { name };
+  const body: UpdateDiagramRequest = { name, dslText };
   const response = await apiClient.patch<DiagramResponse>(`/diagrams/${id}`, body);
   const diagram = mapDiagramResponseToDiagram(response.data);
   await queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(projectId) });
