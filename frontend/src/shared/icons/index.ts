@@ -1,4 +1,5 @@
 import {
+  PanelLeft,
   Table2,
   Columns3,
   Trash2,
@@ -105,4 +106,5 @@ export {
   Layers as LayersIcon,
   Share2 as ShareIcon,
   GitBranch as BranchIcon,
+  PanelLeft as SidebarIcon,
 };

@@ -52,7 +52,7 @@ export interface NoteNodeData extends Record<string, unknown> {
   height: number;
 }
 
-export interface RelationshipEdgeData {
+export interface RelationshipEdgeData extends Record<string, unknown> {
   relationshipId: string;
   relationshipType: RelationshipType;
   sourceColumnId: string;

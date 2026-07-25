@@ -16,6 +16,9 @@ export const CANVAS = {
   NOTE_DEFAULT_WIDTH: 240,
   NOTE_DEFAULT_HEIGHT: 160,
   CONNECTION_HANDLE_SIZE: 10,
+  SNAP_DISTANCE: 8,
+  SELECTION_COLOR: 'hsl(var(--primary))',
+  DOUBLE_CLICK_DELAY: 300,
 } as const;
 
 export const TABLE_COLORS = [

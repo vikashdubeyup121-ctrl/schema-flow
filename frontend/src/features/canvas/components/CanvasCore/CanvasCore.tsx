@@ -19,6 +19,7 @@ import { useCanvasHover } from '../../hooks/useCanvasHover';
 import { useCanvasContextMenu } from '../../hooks/useCanvasContextMenu';
 import { useCanvasViewportStore } from '../../stores/canvasViewport.store';
 import { useCanvasSelectionStore } from '../../stores/canvasSelection.store';
+import { useCanvasInteractionStore } from '../../stores/canvasInteraction.store';
 import { snapToGrid } from '../../services/snapEngine.service';
 import { CANVAS } from '../../constants/canvas.constants';
 import type { TableNodeData } from '../../types/CanvasNode';
@@ -56,6 +57,7 @@ export function CanvasCore({
 
   const setViewport = useCanvasViewportStore((s) => s.setViewport);
   const deselectAll = useCanvasSelectionStore((s) => s.deselectAll);
+  const activeTool = useCanvasInteractionStore((s) => s.activeTool);
   const { onTableHover, onTableLeave } = useCanvasHover(edges);
   const { openMenu } = useCanvasContextMenu();
 
@@ -153,9 +155,10 @@ export function CanvasCore({
       maxZoom={CANVAS.MAX_ZOOM}
       defaultViewport={{ x: 0, y: 0, zoom: CANVAS.DEFAULT_ZOOM }}
       panOnScroll
-      panOnDrag={[1, 2]}
-      selectionOnDrag={false}
+      panOnDrag={activeTool === 'hand' ? true : [1, 2]}
+      selectionOnDrag={activeTool === 'pointer'}
       selectNodesOnDrag={false}
+      panActivationKeyCode="Space"
       nodesDraggable
       nodesConnectable
       elementsSelectable
