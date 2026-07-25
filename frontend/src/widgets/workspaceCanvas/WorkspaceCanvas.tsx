@@ -97,13 +97,25 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     (changes: NodeChange[]) => {
       setNodes((ns) => {
         const updated = applyNodeChanges(changes, ns);
-        // On drag-end, commit snapped position and sync to feature stores
+        
+        let shouldSync = false;
         for (const change of changes) {
-          if (change.type === 'position' && !change.dragging) {
+          if (change.type === 'position' && change.dragging === false) {
             setIsDirty(true);
+            shouldSync = true; // Drag ended
+          } else if (
+            change.type === 'add' ||
+            change.type === 'remove' ||
+            change.type === 'dimensions' ||
+            change.type === 'reset'
+          ) {
+            shouldSync = true;
           }
         }
-        syncNodesToFeatureStores(updated, edges);
+        
+        if (shouldSync) {
+          syncNodesToFeatureStores(updated, edges);
+        }
         return updated;
       });
     },

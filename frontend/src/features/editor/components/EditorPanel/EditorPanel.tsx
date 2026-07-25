@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useEffect, useRef, useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -132,7 +132,7 @@ interface EditorPanelProps {
   onWidthChange: (width: number) => void;
 }
 
-export function EditorPanel({ value, onChange, width, onWidthChange }: EditorPanelProps): ReactNode {
+export const EditorPanel = memo(function EditorPanel({ value, onChange, width, onWidthChange }: EditorPanelProps): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const isExternalUpdateRef = useRef(false);
@@ -232,4 +232,4 @@ export function EditorPanel({ value, onChange, width, onWidthChange }: EditorPan
       </div>
     </div>
   );
-}
+});

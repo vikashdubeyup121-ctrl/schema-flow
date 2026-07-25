@@ -80,7 +80,9 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
     
     isSyncingFromEditorRef.current = true;
     try {
-      const ast = parseDsl(dslText);
+      // Use the latest dslText from store but only run this once on enable
+      const currentDsl = useEditorStore.getState().dslText;
+      const ast = parseDsl(currentDsl);
       const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
       const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst);
       optionsRef.current.onNodesChange(newNodes);
@@ -88,7 +90,8 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
     } finally {
       isSyncingFromEditorRef.current = false;
     }
-  }, [options.enabled, dslText]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.enabled]);
 
   return { dslText, onDslChange, syncCanvasToEditor };
 }

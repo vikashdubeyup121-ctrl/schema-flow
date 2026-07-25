@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import {
   ReactFlow,
   Background,
@@ -42,7 +42,7 @@ interface CanvasCoreProps {
   onConnect: OnConnect;
 }
 
-export function CanvasCore({
+export const CanvasCore = memo(function CanvasCore({
   nodes,
   edges,
   onNodesChange,
@@ -190,4 +190,4 @@ export function CanvasCore({
       />
     </ReactFlow>
   );
-}
+});

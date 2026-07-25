@@ -31,7 +31,7 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
 
       const existingTable = tableStore.tables[data.tableId];
       if (existingTable) {
-        tableStore.updateTable(data.tableId, {
+        const update = {
           name: tableData.name,
           color: tableData.color,
           collapsed: tableData.collapsed,
@@ -39,7 +39,21 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
           width: tableData.width,
           reviewState: tableData.reviewState,
           columnIds: tableData.columnIds,
-        });
+        };
+        const hasChanges =
+          existingTable.name !== update.name ||
+          existingTable.color !== update.color ||
+          existingTable.collapsed !== update.collapsed ||
+          existingTable.position?.x !== update.position?.x ||
+          existingTable.position?.y !== update.position?.y ||
+          existingTable.width !== update.width ||
+          existingTable.reviewState !== update.reviewState ||
+          existingTable.columnIds.length !== update.columnIds.length ||
+          existingTable.columnIds.some((id, i) => id !== update.columnIds[i]);
+          
+        if (hasChanges) {
+          tableStore.updateTable(data.tableId, update);
+        }
       } else {
         tableStore.addTable(tableData);
       }
@@ -62,19 +76,33 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
 
         const existingCol = columnStore.columns[col.id];
         if (existingCol) {
-          columnStore.updateColumn(col.id, {
-            tableId: colData.tableId,
-            name: colData.name,
-            dataType: colData.dataType,
-            nullable: colData.nullable,
-            primaryKey: colData.primaryKey,
-            foreignKey: colData.foreignKey,
-            unique: colData.unique,
-            defaultValue: colData.defaultValue,
-            note: colData.note,
-            reviewState: colData.reviewState,
-            position: colData.position,
-          });
+          const hasChanges = 
+            existingCol.name !== colData.name ||
+            existingCol.dataType !== colData.dataType ||
+            existingCol.nullable !== colData.nullable ||
+            existingCol.primaryKey !== colData.primaryKey ||
+            existingCol.foreignKey !== colData.foreignKey ||
+            existingCol.unique !== colData.unique ||
+            existingCol.defaultValue !== colData.defaultValue ||
+            existingCol.note !== colData.note ||
+            existingCol.reviewState !== colData.reviewState ||
+            existingCol.position !== colData.position;
+
+          if (hasChanges) {
+            columnStore.updateColumn(col.id, {
+              tableId: colData.tableId,
+              name: colData.name,
+              dataType: colData.dataType,
+              nullable: colData.nullable,
+              primaryKey: colData.primaryKey,
+              foreignKey: colData.foreignKey,
+              unique: colData.unique,
+              defaultValue: colData.defaultValue,
+              note: colData.note,
+              reviewState: colData.reviewState,
+              position: colData.position,
+            });
+          }
         } else {
           columnStore.addColumn(colData);
         }
@@ -94,13 +122,23 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
 
       const existingNote = noteStore.notes[data.noteId];
       if (existingNote) {
-        noteStore.updateNote(data.noteId, {
-          content: noteData.content,
-          reviewState: noteData.reviewState,
-          position: noteData.position,
-          width: noteData.width,
-          height: noteData.height,
-        });
+        const hasChanges = 
+          existingNote.content !== noteData.content ||
+          existingNote.reviewState !== noteData.reviewState ||
+          existingNote.position?.x !== noteData.position?.x ||
+          existingNote.position?.y !== noteData.position?.y ||
+          existingNote.width !== noteData.width ||
+          existingNote.height !== noteData.height;
+
+        if (hasChanges) {
+          noteStore.updateNote(data.noteId, {
+            content: noteData.content,
+            reviewState: noteData.reviewState,
+            position: noteData.position,
+            width: noteData.width,
+            height: noteData.height,
+          });
+        }
       } else {
         noteStore.addNote(noteData);
       }
@@ -122,14 +160,24 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
 
       const existingRel = relStore.relationships[data.relationshipId];
       if (existingRel) {
-        relStore.updateRelationship(data.relationshipId, {
-          sourceTableId: relData.sourceTableId,
-          sourceColumnId: relData.sourceColumnId,
-          targetTableId: relData.targetTableId,
-          targetColumnId: relData.targetColumnId,
-          relationshipType: relData.relationshipType,
-          reviewState: relData.reviewState,
-        });
+        const hasChanges = 
+          existingRel.sourceTableId !== relData.sourceTableId ||
+          existingRel.sourceColumnId !== relData.sourceColumnId ||
+          existingRel.targetTableId !== relData.targetTableId ||
+          existingRel.targetColumnId !== relData.targetColumnId ||
+          existingRel.relationshipType !== relData.relationshipType ||
+          existingRel.reviewState !== relData.reviewState;
+
+        if (hasChanges) {
+          relStore.updateRelationship(data.relationshipId, {
+            sourceTableId: relData.sourceTableId,
+            sourceColumnId: relData.sourceColumnId,
+            targetTableId: relData.targetTableId,
+            targetColumnId: relData.targetColumnId,
+            relationshipType: relData.relationshipType,
+            reviewState: relData.reviewState,
+          });
+        }
       } else {
         relStore.addRelationship(relData);
       }

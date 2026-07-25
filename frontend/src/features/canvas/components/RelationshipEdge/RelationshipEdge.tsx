@@ -55,7 +55,7 @@ export const RelationshipEdge = memo(function RelationshipEdge({
   const reviewColor = REVIEW_STATE_COLORS[reviewState];
   const isDeleted = reviewState === 'deleted';
 
-  const strokeColor = reviewState !== 'published' ? reviewColor : (selected ?? isHighlighted)
+  const strokeColor = (reviewState !== 'published' && reviewState !== 'unchanged') ? reviewColor : (selected ?? isHighlighted)
     ? 'hsl(var(--selected))'
     : 'hsl(var(--muted-foreground))';
 

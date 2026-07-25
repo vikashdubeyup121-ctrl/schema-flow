@@ -78,7 +78,7 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
 
   const reviewBorderColor = REVIEW_STATE_COLORS[table.reviewState];
   const borderStyle =
-    table.reviewState !== 'published'
+    table.reviewState !== 'published' && table.reviewState !== 'unchanged'
       ? `2px solid ${reviewBorderColor}`
       : isSelected || isHovered
         ? '2px solid hsl(var(--selected))'

@@ -32,7 +32,7 @@ export const ColumnRow = memo(function ColumnRow({ columnId }: ColumnRowProps): 
 
   const isDeleted = column.reviewState === 'deleted';
   const reviewColor = REVIEW_STATE_COLORS[column.reviewState];
-  const showReviewBar = column.reviewState !== 'published';
+  const showReviewBar = column.reviewState !== 'published' && column.reviewState !== 'unchanged';
 
   return (
     <div
