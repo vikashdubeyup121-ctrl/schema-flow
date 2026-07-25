@@ -31,4 +31,7 @@ export {
   type OnNodesChange,
   type OnEdgesChange,
   type FitViewOptions,
+  type OnSelectionChangeParams,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';

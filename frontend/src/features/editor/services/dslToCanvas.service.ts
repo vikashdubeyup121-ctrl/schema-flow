@@ -56,7 +56,7 @@ function buildTableNode(
     columns,
   };
 
-  return { id, type: 'table', position, data };
+  return { id, type: 'table', position, data, style: { width: 240 } };
 }
 
 export function dslAstToCanvasNodes(
@@ -89,10 +89,10 @@ export function dslAstToCanvasNodes(
     if (!sourceCol || !targetCol) continue;
 
     const relType =
-      ref.type === '>' ? 'ONE_TO_MANY' :
-      ref.type === '<' ? 'MANY_TO_ONE' : 'ONE_TO_ONE';
+      ref.type === '>' ? 'MANY_TO_ONE' :
+      ref.type === '<' ? 'ONE_TO_MANY' : 'ONE_TO_ONE';
 
-    const edgeId = `rel-${sourceNode.id}-${targetNode.id}-${sourceCol.id}`;
+    const edgeId = `rel-${sourceNode.id}-${targetNode.id}-${sourceCol.id}-${targetCol.id}`;
     const existingEdge = existingEdges.find((e) => e.id === edgeId);
 
     const edgeData: RelationshipEdgeData = {

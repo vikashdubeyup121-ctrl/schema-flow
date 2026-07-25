@@ -1,16 +1,15 @@
-import { useCallback, useMemo, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import {
   ReactFlow,
   Background,
   MiniMap,
   BackgroundVariant,
-  useNodesState,
-  useEdgesState,
   type OnConnect,
+  type OnNodesChange,
+  type OnEdgesChange,
   type Node,
   type Edge,
-  type NodeChange,
-  type EdgeChange,
+  type OnSelectionChangeParams,
 } from '@/lib/reactflow';
 import { TableNode } from '../TableNode';
 import { NoteNode } from '../NoteNode';
@@ -20,10 +19,8 @@ import { useCanvasContextMenu } from '../../hooks/useCanvasContextMenu';
 import { useCanvasViewportStore } from '../../stores/canvasViewport.store';
 import { useCanvasSelectionStore } from '../../stores/canvasSelection.store';
 import { useCanvasInteractionStore } from '../../stores/canvasInteraction.store';
-import { snapToGrid } from '../../services/snapEngine.service';
 import { CANVAS } from '../../constants/canvas.constants';
-import type { TableNodeData } from '../../types/CanvasNode';
-import type { Point } from '@/shared/types/Geometry';
+import type { TableNodeData, NoteNodeData, RelationshipEdgeData } from '../../types/CanvasNode';
 
 // Node and edge types defined outside component to prevent recreation on render
 const nodeTypes = {
@@ -38,53 +35,69 @@ const edgeTypes = {
 type AnyMouseEvent = ReactMouseEvent | globalThis.MouseEvent;
 
 interface CanvasCoreProps {
-  initialNodes: Node[];
-  initialEdges: Edge[];
-  onNodePositionCommit: (nodeId: string, position: Point) => void;
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
-  onAddTable: (position: Point) => void;
 }
 
 export function CanvasCore({
-  initialNodes,
-  initialEdges,
-  onNodePositionCommit,
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
   onConnect,
-  onAddTable: _onAddTable,
 }: CanvasCoreProps): ReactNode {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
   const setViewport = useCanvasViewportStore((s) => s.setViewport);
   const deselectAll = useCanvasSelectionStore((s) => s.deselectAll);
+  const selectTable = useCanvasSelectionStore((s) => s.selectTable);
+  const selectNote = useCanvasSelectionStore((s) => s.selectNote);
+  const selectRelationship = useCanvasSelectionStore((s) => s.selectRelationship);
+  const selectMultipleTables = useCanvasSelectionStore((s) => s.selectMultipleTables);
   const activeTool = useCanvasInteractionStore((s) => s.activeTool);
   const { onTableHover, onTableLeave } = useCanvasHover(edges);
   const { openMenu } = useCanvasContextMenu();
 
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      // Commit position on drag end
-      for (const change of changes) {
-        if (change.type === 'position' && !change.dragging && change.position) {
-          const snapped = snapToGrid(change.position);
-          onNodePositionCommit(change.id, snapped);
-        }
-      }
-    },
-    [onNodesChange, onNodePositionCommit],
-  );
-
-  const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      onEdgesChange(changes);
-    },
-    [onEdgesChange],
-  );
-
   const handlePaneClick = useCallback(() => {
     deselectAll();
   }, [deselectAll]);
+
+  const handleNodeClick = useCallback(
+    (e: AnyMouseEvent, node: Node) => {
+      const multi = (e as ReactMouseEvent).metaKey || (e as ReactMouseEvent).ctrlKey;
+      if (node.type === 'table') {
+        const data = node.data as unknown as TableNodeData;
+        selectTable(data.tableId, multi);
+      } else if (node.type === 'note') {
+        const data = node.data as unknown as NoteNodeData;
+        selectNote(data.noteId, multi);
+      }
+    },
+    [selectTable, selectNote],
+  );
+
+  const handleEdgeClick = useCallback(
+    (e: AnyMouseEvent, edge: Edge) => {
+      const multi = (e as ReactMouseEvent).metaKey || (e as ReactMouseEvent).ctrlKey;
+      const data = edge.data as unknown as RelationshipEdgeData;
+      selectRelationship(data.relationshipId, multi);
+    },
+    [selectRelationship],
+  );
+
+  // Sync rubber-band (drag) multi-selection to Zustand
+  const handleSelectionChange = useCallback(
+    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      const tableIds = selectedNodes
+        .filter((n) => n.type === 'table')
+        .map((n) => (n.data as unknown as TableNodeData).tableId);
+      if (tableIds.length > 1) {
+        selectMultipleTables(tableIds);
+      }
+    },
+    [selectMultipleTables],
+  );
 
   const handlePaneContextMenu = useCallback(
     (e: AnyMouseEvent) => {
@@ -98,7 +111,7 @@ export function CanvasCore({
       const data = node.data as unknown as TableNodeData;
       const targetType = node.type === 'note' ? 'note' : 'table';
       const targetId = node.type === 'note'
-        ? (node.data as unknown as { noteId: string }).noteId
+        ? (node.data as unknown as NoteNodeData).noteId
         : data.tableId;
       openMenu(e, targetType, targetId);
     },
@@ -127,25 +140,19 @@ export function CanvasCore({
     return 'hsl(var(--muted))';
   }, []);
 
-  // Sync external node/edge updates
-  useMemo(() => {
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
-
-  useMemo(() => {
-    setEdges(initialEdges);
-  }, [initialEdges, setEdges]);
-
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
-      onNodesChange={handleNodesChange}
-      onEdgesChange={handleEdgesChange}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onPaneClick={handlePaneClick}
+      onNodeClick={handleNodeClick}
+      onEdgeClick={handleEdgeClick}
+      onSelectionChange={handleSelectionChange}
       onPaneContextMenu={handlePaneContextMenu}
       onNodeContextMenu={handleNodeContextMenu}
       onNodeMouseEnter={handleNodeMouseEnter}

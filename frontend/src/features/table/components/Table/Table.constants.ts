@@ -1,0 +1,7 @@
+export const TABLE = {
+  HEADER_HEIGHT: 40,
+  ROW_HEIGHT: 32,
+  MIN_WIDTH: 200,
+  MAX_WIDTH: 600,
+  DEFAULT_WIDTH: 240,
+} as const;

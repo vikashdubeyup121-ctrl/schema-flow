@@ -4,7 +4,7 @@ import type { DslAst, DslTable, DslColumn, DslRef, RefType } from '../types/DslA
 
 const TABLE_OPEN_RE = /^\s*[Tt]able\s+(\w+)\s*\{/;
 const TABLE_CLOSE_RE = /^\s*\}/;
-const REF_STATEMENT_RE = /^\s*[Rr]ef\s*:\s*(\w+)\.(\w+)\s*([><-])\s*(\w+)\.(\w+)/;
+const REF_STATEMENT_RE = /^\s*[Rr]ef(?:\s+\w+)?\s*:\s*(\w+)\.(\w+)\s*([><-])\s*(\w+)\.(\w+)/;
 const COMMENT_RE = /^\s*\/\//;
 
 // ─── Column constraint parser ──────────────────────────────────────────────────

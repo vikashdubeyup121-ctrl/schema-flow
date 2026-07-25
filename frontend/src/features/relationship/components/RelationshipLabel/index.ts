@@ -1,0 +1,1 @@
+export { RelationshipLabel } from './RelationshipLabel';

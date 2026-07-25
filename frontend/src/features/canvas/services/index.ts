@@ -38,3 +38,4 @@ export {
   serializeNoteForClipboard,
   deserializeClipboardPayload,
 } from './clipboard.service';
+export { syncNodesToFeatureStores } from './storeSync.service';

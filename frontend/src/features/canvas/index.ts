@@ -1,3 +1,4 @@
+export { FloatingToolbar } from './components/FloatingToolbar';
 export { CanvasCore } from './components/CanvasCore';
 export { CanvasToolbar } from './components/CanvasToolbar';
 export { CanvasContextMenu } from './components/CanvasContextMenu';

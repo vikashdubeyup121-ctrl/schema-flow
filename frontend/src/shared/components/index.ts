@@ -1,10 +1,17 @@
 export { Avatar } from './Avatar';
 export { Badge } from './Badge';
 export { Button } from './Button';
+export { ColorPicker } from './ColorPicker';
+export { ConfirmDialog } from './ConfirmDialog';
 export { EmptyState } from './EmptyState';
+export { ErrorBoundary } from './ErrorBoundary';
 export { ErrorState } from './ErrorState';
+export { IconButton } from './IconButton';
 export { Input } from './Input';
+export { LoadingOverlay } from './LoadingOverlay';
+export { MarkdownPreview } from './MarkdownPreview';
 export { Modal } from './Modal';
+export { RenameDialog } from './RenameDialog';
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 export { Skeleton } from './Skeleton';

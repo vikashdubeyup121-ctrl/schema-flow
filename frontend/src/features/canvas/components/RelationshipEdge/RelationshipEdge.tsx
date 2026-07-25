@@ -46,6 +46,7 @@ export const RelationshipEdge = memo(function RelationshipEdge({
   sourcePosition,
   targetPosition,
   data,
+  selected,
 }: EdgeProps & { data?: RelationshipEdgeData }): ReactNode {
   const highlightedEdgeIds = useCanvasHoverStore((s) => s.highlightedEdgeIds);
   const isHighlighted = highlightedEdgeIds.has(id);
@@ -54,11 +55,11 @@ export const RelationshipEdge = memo(function RelationshipEdge({
   const reviewColor = REVIEW_STATE_COLORS[reviewState];
   const isDeleted = reviewState === 'deleted';
 
-  const strokeColor = reviewState !== 'published' ? reviewColor : isHighlighted
+  const strokeColor = reviewState !== 'published' ? reviewColor : (selected ?? isHighlighted)
     ? 'hsl(var(--selected))'
     : 'hsl(var(--muted-foreground))';
 
-  const strokeWidth = isHighlighted ? 2 : 1.5;
+  const strokeWidth = (selected ?? isHighlighted) ? 2.5 : 1.5;
   const strokeDasharray = isDeleted ? '6 3' : undefined;
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
