@@ -6,6 +6,7 @@ import { logout } from '@/features/auth/api/mutations';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { registerForceLogoutHandler } from '@/shared/api/apiClient';
 import { MOCK_USER } from '@/features/auth/mock/mockUser';
+import { STORAGE_KEYS } from '@/shared/constants/Storage';
 import type { User } from '@/features/auth/types/User';
 
 interface AuthContextValue {
@@ -48,6 +49,19 @@ function RealAuthProvider({ children }: AuthProviderProps): ReactNode {
   useEffect(() => {
     registerForceLogoutHandler(triggerForceLogout);
   }, [triggerForceLogout]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      params.delete('token');
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+      window.history.replaceState({}, '', newUrl);
+      // Trigger a re-fetch since we now have a token
+      window.location.reload(); // Simple way to force queryClient to re-run with new token
+    }
+  }, []);
 
   useEffect(() => {
     if (forceLogout) {

@@ -9,6 +9,9 @@ export function LoginPage(): ReactNode {
         <button
           className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
           aria-label="Sign in with Google"
+          onClick={() => {
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1'}/auth/google`;
+          }}
         >
           Sign in with Google
         </button>

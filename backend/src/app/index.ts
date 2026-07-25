@@ -5,7 +5,15 @@ import { config } from '../config/app';
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
-    logger: true,
+    logger: {
+      transport: config.env === 'development' ? {
+        target: 'pino-pretty',
+        options: {
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
+        },
+      } : undefined
+    }
   });
 
   // Register Swagger (OpenAPI)

@@ -8,7 +8,7 @@ export class GoogleService {
   async getTokens(code: string): Promise<string> {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
     
     if (!clientId || !clientSecret || !redirectUri) {
        throw new Error('Google OAuth env variables missing');
@@ -27,7 +27,9 @@ export class GoogleService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to exchange Google code');
+      const errText = await response.text();
+      console.error('Google token exchange failed:', errText);
+      throw new Error('Failed to exchange Google code: ' + errText);
     }
 
     const data = await response.json();

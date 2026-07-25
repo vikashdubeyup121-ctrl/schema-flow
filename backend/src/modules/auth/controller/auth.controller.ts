@@ -12,8 +12,8 @@ export class AuthController {
 
   googleLogin = async (req: FastifyRequest, reply: FastifyReply) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_CALLBACK_URL;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile`;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri || '')}&response_type=code&scope=${encodeURIComponent('email profile')}`;
     reply.redirect(authUrl);
   };
 
@@ -31,7 +31,8 @@ export class AuthController {
       const tokens = await this.authService.login(user);
 
       this.setRefreshCookie(reply, tokens.refreshToken);
-      reply.send({ success: true, data: { accessToken: tokens.accessToken, user } });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      reply.redirect(`${frontendUrl}/?token=${tokens.accessToken}`);
     } catch (error: any) {
       req.log.error(error);
       reply.status(401).send({ success: false, error: { code: 'AUTH_FAILED', message: 'Authentication failed' } });
