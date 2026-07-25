@@ -20,3 +20,32 @@ export const projectsQueryOptions = queryOptions({
   queryFn: fetchProjects,
   staleTime: 5 * 60 * 1000,
 });
+
+async function fetchProject(id: string): Promise<Project> {
+  if (Features.mockData) {
+    return Promise.resolve(MOCK_PROJECTS.find((p) => p.id === id)!);
+  }
+  const response = await apiClient.get<ProjectResponse>(`/projects/${id}`);
+  return mapProjectResponseToProject(response.data);
+}
+
+export const projectQueryOptions = (id: string) => queryOptions({
+  queryKey: projectKeys.detail(id),
+  queryFn: () => fetchProject(id),
+  staleTime: 5 * 60 * 1000,
+  enabled: !!id,
+});
+
+async function fetchProjectMembers(projectId: string): Promise<any[]> {
+  if (Features.mockData) {
+    return Promise.resolve([]);
+  }
+  const response = await apiClient.get<any[]>(`/projects/${projectId}/members`);
+  return response.data;
+}
+
+export const projectMembersQueryOptions = (projectId: string) => queryOptions({
+  queryKey: projectKeys.members(projectId),
+  queryFn: () => fetchProjectMembers(projectId),
+  staleTime: 5 * 60 * 1000,
+});

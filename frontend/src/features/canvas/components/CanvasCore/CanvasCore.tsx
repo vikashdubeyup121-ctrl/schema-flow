@@ -37,9 +37,13 @@ type AnyMouseEvent = ReactMouseEvent | globalThis.MouseEvent;
 interface CanvasCoreProps {
   nodes: Node[];
   edges: Edge[];
-  onNodesChange: OnNodesChange;
-  onEdgesChange: OnEdgesChange;
-  onConnect: OnConnect;
+  onNodesChange?: OnNodesChange | undefined;
+  onEdgesChange?: OnEdgesChange | undefined;
+  onConnect?: OnConnect | undefined;
+  nodesDraggable?: boolean;
+  nodesConnectable?: boolean;
+  elementsSelectable?: boolean;
+  isReadOnly?: boolean;
 }
 
 export const CanvasCore = memo(function CanvasCore({
@@ -48,6 +52,10 @@ export const CanvasCore = memo(function CanvasCore({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  nodesDraggable = true,
+  nodesConnectable = true,
+  elementsSelectable = true,
+  isReadOnly = false,
 }: CanvasCoreProps): ReactNode {
   const setViewport = useCanvasViewportStore((s) => s.setViewport);
   const deselectAll = useCanvasSelectionStore((s) => s.deselectAll);
@@ -101,13 +109,25 @@ export const CanvasCore = memo(function CanvasCore({
 
   const handlePaneContextMenu = useCallback(
     (e: AnyMouseEvent) => {
+      if (isReadOnly) {
+        e.preventDefault();
+        const { Toast } = require('@/shared/stores/toast.store');
+        Toast.warning('You only have view permissions for this diagram.');
+        return;
+      }
       openMenu(e, 'canvas');
     },
-    [openMenu],
+    [openMenu, isReadOnly],
   );
 
   const handleNodeContextMenu = useCallback(
     (e: AnyMouseEvent, node: Node) => {
+      if (isReadOnly) {
+        e.preventDefault();
+        const { Toast } = require('@/shared/stores/toast.store');
+        Toast.warning('You only have view permissions for this diagram.');
+        return;
+      }
       const data = node.data as unknown as TableNodeData;
       const targetType = node.type === 'note' ? 'note' : 'table';
       const targetId = node.type === 'note'
@@ -115,7 +135,18 @@ export const CanvasCore = memo(function CanvasCore({
         : data.tableId;
       openMenu(e, targetType, targetId);
     },
-    [openMenu],
+    [openMenu, isReadOnly],
+  );
+
+  const handleNodeDoubleClick = useCallback(
+    (e: AnyMouseEvent, node: Node) => {
+      if (isReadOnly) {
+        e.preventDefault();
+        const { Toast } = require('@/shared/stores/toast.store');
+        Toast.warning('You only have view permissions for this diagram.');
+      }
+    },
+    [isReadOnly]
   );
 
   const handleNodeMouseEnter = useCallback(
@@ -146,11 +177,12 @@ export const CanvasCore = memo(function CanvasCore({
       edges={edges}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
+      {...(onNodesChange && { onNodesChange })}
+      {...(onEdgesChange && { onEdgesChange })}
+      {...(onConnect && { onConnect })}
       onPaneClick={handlePaneClick}
       onNodeClick={handleNodeClick}
+      onNodeDoubleClick={handleNodeDoubleClick}
       onEdgeClick={handleEdgeClick}
       onSelectionChange={handleSelectionChange}
       onPaneContextMenu={handlePaneContextMenu}
@@ -166,9 +198,9 @@ export const CanvasCore = memo(function CanvasCore({
       selectionOnDrag={activeTool === 'pointer'}
       selectNodesOnDrag={false}
       panActivationKeyCode="Space"
-      nodesDraggable
-      nodesConnectable
-      elementsSelectable
+      nodesDraggable={nodesDraggable}
+      nodesConnectable={nodesConnectable}
+      elementsSelectable={elementsSelectable}
       snapToGrid={false}
       proOptions={{ hideAttribution: true }}
       className="bg-canvas"

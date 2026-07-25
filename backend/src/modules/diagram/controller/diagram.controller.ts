@@ -32,6 +32,7 @@ export class DiagramController {
       const diagrams = await this.diagramService.list(user.userId, req.params.projectId);
       reply.send({ success: true, data: diagrams.map(DiagramMapper.toResponse) });
     } catch (err: any) {
+      console.error(err);
       const status = err.message === 'PROJECT_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
       reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
     }

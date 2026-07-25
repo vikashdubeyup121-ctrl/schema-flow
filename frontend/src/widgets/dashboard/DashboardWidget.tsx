@@ -17,6 +17,7 @@ import {
 import {
   ProjectCard,
   CreateProjectModal,
+  ManageMembersModal,
   useProjects,
   useProjectMutations,
   useProjectStore,
@@ -145,6 +146,7 @@ export function DashboardWidget(): ReactNode {
   const [createOpen, setCreateOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [diagramToDelete, setDiagramToDelete] = useState<{ id: string; projectId: string } | null>(null);
+  const [shareProject, setShareProject] = useState<{ id: string; name: string; ownerId: string } | null>(null);
 
   // Pre-fetch diagram counts — diagrams are loaded lazily per project
   // diagramCount is shown on each project card from the query cache if available
@@ -266,6 +268,7 @@ export function DashboardWidget(): ReactNode {
                   onSelect={() => handleSelectProject(project.id)}
                   onRename={(name) => update.mutate({ id: project.id, name })}
                   onDelete={() => setProjectToDelete(project.id)}
+                  onShare={() => setShareProject({ id: project.id, name: project.name, ownerId: project.ownerId })}
                 />
               ))}
             </div>
@@ -304,6 +307,17 @@ export function DashboardWidget(): ReactNode {
         onCreate={handleCreateProject}
         isLoading={create.isPending}
       />
+
+      {/* Share project modal */}
+      {shareProject && (
+        <ManageMembersModal
+          isOpen={true}
+          onClose={() => setShareProject(null)}
+          projectId={shareProject.id}
+          projectName={shareProject.name}
+          isOwner={shareProject.ownerId === user?.id}
+        />
+      )}
 
       {/* Delete Confirmation Modals */}
       <ConfirmDialog

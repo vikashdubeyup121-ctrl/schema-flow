@@ -14,6 +14,8 @@ export interface DiagramResponse {
   };
   createdAt: string;
   updatedAt: string;
+  updatedBy: string | null;
+  updatedByName?: string;
 }
 
 export interface CreateDiagramRequest {

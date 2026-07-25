@@ -7,17 +7,42 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  name          String
-  pictureUrl    String?        @map("picture_url")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  RefreshTokens RefreshToken[]
-  projects      Project[]
-  auditLogs     AuditLog[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String
+  pictureUrl     String?         @map("picture_url")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  RefreshTokens  RefreshToken[]
+  projects       Project[]
+  projectMembers ProjectMember[]
+  auditLogs      AuditLog[]
+  diagrams       Diagram[]
 
   @@map("users")
+}
+
+enum ProjectRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+  projectId String      @map("project_id")
+  userId    String      @map("user_id")
+  role      ProjectRole
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_members")
 }
 
 model Project {
@@ -29,8 +54,9 @@ model Project {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner    User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   diagrams Diagram[]
+  members  ProjectMember[]
 
   @@index([ownerId])
   @@index([createdAt])
@@ -53,10 +79,12 @@ model Diagram {
   viewportZoom             Float     @default(1) @map("viewport_zoom")
   createdAt                DateTime  @default(now()) @map("created_at")
   updatedAt                DateTime  @updatedAt @map("updated_at")
+  updatedBy                String?   @map("updated_by")
   deletedAt                DateTime? @map("deleted_at")
 
-  project  Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions DiagramVersion[]
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  updatedByUser User?            @relation(fields: [updatedBy], references: [id], onDelete: SetNull)
+  versions      DiagramVersion[]
 
   @@index([projectId])
   @@index([updatedAt])

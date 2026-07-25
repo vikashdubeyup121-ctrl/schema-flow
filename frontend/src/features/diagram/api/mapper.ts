@@ -11,5 +11,7 @@ export function mapDiagramResponseToDiagram(dto: DiagramResponse): Diagram {
     publishedDslText: dto.publishedDslText,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    updatedBy: dto.updatedBy,
+    updatedByName: dto.updatedByName,
   };
 }

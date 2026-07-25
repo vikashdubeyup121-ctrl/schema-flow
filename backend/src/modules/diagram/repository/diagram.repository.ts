@@ -51,21 +51,24 @@ export class DiagramRepository {
   async findById(id: string): Promise<Diagram | null> {
     return this.prisma.diagram.findFirst({
       where: { id, deletedAt: null },
+      include: { updatedByUser: { select: { name: true } } },
     });
   }
 
-  async findByProject(projectId: string): Promise<Diagram[]> {
+  async findByProject(projectId: string): Promise<any[]> {
     return this.prisma.diagram.findMany({
       where: { projectId, deletedAt: null },
+      include: { updatedByUser: { select: { name: true } } },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; dslText?: string }): Promise<Diagram> {
+  async update(id: string, data: { name?: string; description?: string; dslText?: string; updatedBy?: string }): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
       const diagram = await tx.diagram.update({
         where: { id },
         data,
+        include: { updatedByUser: { select: { name: true } } },
       });
 
       if (data.dslText && diagram.activeDraftVersionId) {

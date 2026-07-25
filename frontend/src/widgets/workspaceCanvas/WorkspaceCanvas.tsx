@@ -23,6 +23,10 @@ import {
   CanvasStatusBar,
   useCanvasAutosave,
 } from '@/features/canvas';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { useProjectMembers, ManageMembersModal } from '@/features/project';
+import { projectQueryOptions } from '@/features/project/api/queries';
+import { Toast } from '@/shared/stores/toast.store';
 import { useCanvasContextMenuStore } from '@/features/canvas/stores/canvasContextMenu.store';
 import { useCanvasSelectionStore } from '@/features/canvas/stores/canvasSelection.store';
 import { TABLE_COLORS, CANVAS } from '@/features/canvas/constants/canvas.constants';
@@ -54,7 +58,21 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const setDslText = useEditorStore((s) => s.setDslText);
 
   // Fetch diagram data
-  const { data: diagram, isLoading } = useQuery(diagramQueryOptions(diagramId));
+  const { data: diagram, isLoading: isDiagramLoading } = useQuery(diagramQueryOptions(diagramId));
+  const { data: project, isLoading: isProjectLoading } = useQuery(projectQueryOptions(diagram?.projectId || ''));
+  const { user } = useAuth();
+  const { members, isLoading: isMembersLoading } = useProjectMembers(diagram?.projectId || '');
+  
+  const myMember = members?.find((m: any) => m.user.id === user?.id);
+  const isOwner = project?.ownerId === user?.id;
+  const userRole = isOwner ? 'OWNER' : myMember?.role || 'VIEWER';
+  
+  const isDataLoading = isDiagramLoading || (!!diagram?.projectId && (isProjectLoading || isMembersLoading));
+  
+  // Default to false while loading to allow initialization, then re-evaluate
+  const isReadOnly = isDataLoading ? false : userRole === 'VIEWER';
+
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   // Start empty — useEditorSync populates from DSL on mount
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -89,7 +107,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
       setEdges(newEdges);
       syncNodesToFeatureStores(nodes, newEdges);
     },
-    enabled: hasInitialized, // Only sync after initializing from DB
+    enabled: hasInitialized, // Always enable sync after init to load nodes!
     onDirty: () => setIsDirty(true),
   });
 
@@ -101,7 +119,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
         let shouldSync = false;
         for (const change of changes) {
           if (change.type === 'position' && change.dragging === false) {
-            setIsDirty(true);
+            if (!isReadOnly) setIsDirty(true);
             shouldSync = true; // Drag ended
           } else if (
             change.type === 'add' ||
@@ -112,29 +130,52 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           }
         }
         
-        if (shouldSync) {
+        if (shouldSync && !isReadOnly) {
           syncNodesToFeatureStores(updated, edges);
         }
         return updated;
       });
     },
-    [edges],
+    [edges, isReadOnly],
   );
 
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       setEdges((es) => {
         const updated = applyEdgeChanges(changes, es);
-        syncNodesToFeatureStores(nodes, updated);
+        if (!isReadOnly) {
+          syncNodesToFeatureStores(nodes, updated);
+        }
         return updated;
       });
     },
-    [nodes],
+    [nodes, isReadOnly],
   );
 
-  // Keyboard shortcut: E to toggle editor sidebar
+  const { status: autosaveStatus, lastSavedAt, flush } = useCanvasAutosave({
+    isDirty: isDirty && !isReadOnly,
+    onSave: async () => {
+      console.log('Explicit Save triggered! diagram:', !!diagram, 'isReadOnly:', isReadOnly, 'dslText length:', dslText.length);
+      if (diagram && !isReadOnly) {
+        console.log('Calling updateDiagram API...');
+        await updateDiagram(diagramId, undefined, diagram.projectId, dslText);
+        console.log('updateDiagram API call finished!');
+      } else {
+        console.log('Skipped API call. Diagram exists:', !!diagram, 'isReadOnly:', isReadOnly);
+      }
+      setIsDirty(false);
+    },
+  });
+
+  // Keyboard shortcut: E to toggle editor sidebar, Ctrl+S to save
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        flush();
+        return;
+      }
+      
       const target = e.target as HTMLElement;
       const isEditing =
         target.tagName === 'INPUT' ||
@@ -147,17 +188,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleSidebar]);
-
-  const { status: autosaveStatus, lastSavedAt } = useCanvasAutosave({
-    isDirty,
-    onSave: async () => {
-      if (diagram) {
-        await updateDiagram(diagramId, undefined, diagram.projectId, dslText);
-      }
-      setIsDirty(false);
-    },
-  });
+  }, [toggleSidebar, flush]);
 
 
   const handleConnect = useCallback<OnConnect>(
@@ -352,19 +383,20 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
 
   const tableCount = nodes.filter((n) => n.type === 'table').length;
 
-  if (isLoading || !hasInitialized) {
+  if (isDataLoading || !hasInitialized) {
     return <div className="flex items-center justify-center w-full h-full text-muted-foreground">Loading diagram...</div>;
   }
 
   return (
     <div className="flex w-full h-full overflow-hidden">
-      {/* Left: Editor sidebar */}
       {isOpen && (
         <EditorPanel
           value={dslText}
           onChange={onDslChange}
           width={width}
           onWidthChange={setSidebarWidth}
+          onSave={flush}
+          isReadOnly={isReadOnly}
         />
       )}
 
@@ -373,52 +405,90 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
         <CanvasCore
           nodes={nodes}
           edges={edges}
+          nodesDraggable={!isReadOnly}
+          nodesConnectable={!isReadOnly}
+          isReadOnly={isReadOnly}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
-          onConnect={handleConnect}
+          {...(isReadOnly ? {} : {
+            onConnect: handleConnect,
+          })}
         />
 
         <CanvasToolbar
-          onAddTable={handleAddTableFromToolbar}
-          onAddNote={handleAddNoteFromToolbar}
+          {...(!isReadOnly && {
+            onAddTable: handleAddTableFromToolbar,
+            onAddNote: handleAddNoteFromToolbar,
+            onPublish: async () => {
+              const { publishDiagram } = await import('@/features/diagram/api/mutations');
+              try {
+                await publishDiagram(diagramId, diagram!.projectId);
+                Toast.success('Diagram published successfully');
+                queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
+                window.location.reload();
+              } catch (error: any) {
+                Toast.error('Failed to publish diagram');
+              }
+            },
+          })}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onFitView={handleFitView}
           isSidebarOpen={isOpen}
           onToggleSidebar={toggleSidebar}
-          onPublish={async () => {
-            const { publishDiagram } = await import('@/features/diagram/api/mutations');
-            try {
-              await publishDiagram(diagramId, diagram!.projectId);
-              // Force refetch to get updated diagram and clear review states
-              queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
-              window.location.reload(); // Simple way to clear UI states until real-time is set up
-            } catch (err) {
-              console.error('Failed to publish', err);
-            }
-          }}
+          onSave={flush}
+          {...(isOwner && {
+            onShare: () => setIsShareOpen(true),
+          })}
         />
 
-        <CanvasContextMenu
-          onAddTable={handleAddTableFromContextMenu}
-          onAddNote={handleAddNoteFromContextMenu}
-          onDeleteTarget={handleDeleteTarget}
-          onSelectAll={handleSelectAll}
-          onFitView={handleFitView}
-          onRenameTable={handleRenameTable}
-          onChangeTableColor={handleChangeTableColor}
-          onChangeRelationshipType={handleChangeRelationshipType}
-        />
+        {!isReadOnly && (
+          <CanvasContextMenu
+            onAddTable={handleAddTableFromContextMenu}
+            onAddNote={handleAddNoteFromContextMenu}
+            onDeleteTarget={handleDeleteTarget}
+            onSelectAll={handleSelectAll}
+            onFitView={handleFitView}
+            onRenameTable={handleRenameTable}
+            onChangeTableColor={handleChangeTableColor}
+            onChangeRelationshipType={handleChangeRelationshipType}
+          />
+        )}
 
         <CanvasStatusBar
           nodeCount={tableCount}
           autosaveStatus={autosaveStatus}
           lastSavedAt={lastSavedAt}
         />
+
+        {/* Top Right: Last Updated Info */}
+        <div 
+          className="absolute top-3 right-3 flex flex-col items-end gap-0.5 bg-card/80 backdrop-blur border border-border px-3 py-1.5 rounded-lg shadow-sm pointer-events-none"
+          style={{ zIndex: 10 }}
+        >
+          <span className="text-xs text-foreground font-medium truncate max-w-[200px]" title={diagram.name}>
+            {diagram.name}
+          </span>
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            {diagram.updatedByName && <span>By {diagram.updatedByName}</span>}
+            <span>•</span>
+            <span>{new Date(diagram.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        </div>
       </div>
 
       {/* Right: Properties panel */}
       {/* <PropertiesPanel /> */}
+
+      {isShareOpen && project && (
+        <ManageMembersModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+          projectId={project.id}
+          projectName={project.name}
+          isOwner={isOwner}
+        />
+      )}
     </div>
   );
 }

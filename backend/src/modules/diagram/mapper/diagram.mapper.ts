@@ -16,10 +16,12 @@ export interface DiagramResponse {
   };
   createdAt: string;
   updatedAt: string;
+  updatedBy: string | null;
+  updatedByName?: string;
 }
 
 export class DiagramMapper {
-  static toResponse(diagram: Diagram): DiagramResponse {
+  static toResponse(diagram: any): DiagramResponse {
     return {
       id: diagram.id,
       projectId: diagram.projectId,
@@ -36,6 +38,8 @@ export class DiagramMapper {
       },
       createdAt: diagram.createdAt.toISOString(),
       updatedAt: diagram.updatedAt.toISOString(),
+      updatedBy: diagram.updatedBy,
+      updatedByName: diagram.updatedByUser?.name,
     };
   }
 }

@@ -6,6 +6,8 @@ import { PresenceService } from '../service/presence.service';
 import { OperationService } from '../service/operation.service';
 import { AuthenticatedSocket, CollaborationOperation } from '../types';
 
+export let globalIO: Server | null = null;
+
 export class CollaborationGateway {
   private io: Server;
 
@@ -18,6 +20,7 @@ export class CollaborationGateway {
     this.io = new Server(server, {
       cors: { origin: '*' }
     });
+    globalIO = this.io;
 
     // 1. Authentication Middleware
     this.io.use((socket, next) => {

@@ -123,6 +123,11 @@ export function DiagramCard({ diagram, onOpen, onRename, onDelete }: DiagramCard
           <p className="text-xs text-muted-foreground mt-0.5">
             Updated {formatDate(diagram.updatedAt)}
           </p>
+          {diagram.updatedByName && (
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+              by {diagram.updatedByName}
+            </p>
+          )}
         </div>
       )}
     </div>

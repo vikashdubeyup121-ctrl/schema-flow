@@ -77,4 +77,60 @@ export class ProjectController {
       reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
     }
   };
+
+  addMember = async (req: FastifyRequest<{ Params: { id: string }, Body: { email: string, role: 'EDITOR' | 'VIEWER' } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    const { email, role } = req.body;
+    
+    if (!email || !role || !['EDITOR', 'VIEWER'].includes(role)) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid email or role' } });
+    }
+
+    try {
+      const member = await this.projectService.addMember(user.userId, req.params.id, email, role);
+      reply.status(201).send({ success: true, data: member });
+    } catch (err: any) {
+      const status = err.message === 'USER_NOT_FOUND' ? 404 : (err.message === 'FORBIDDEN' ? 403 : 400);
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
+
+  getMembers = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    try {
+      const members = await this.projectService.getMembers(user.userId, req.params.id);
+      reply.send({ success: true, data: members });
+    } catch (err: any) {
+      const status = err.message === 'PROJECT_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
+
+  removeMember = async (req: FastifyRequest<{ Params: { id: string, userId: string } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    try {
+      await this.projectService.removeMember(user.userId, req.params.id, req.params.userId);
+      reply.send({ success: true, data: {} });
+    } catch (err: any) {
+      const status = err.message === 'PROJECT_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
+
+  updateMemberRole = async (req: FastifyRequest<{ Params: { id: string, userId: string }, Body: { role: 'EDITOR' | 'VIEWER' } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    const { role } = req.body;
+    
+    if (!role || !['EDITOR', 'VIEWER'].includes(role)) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid role' } });
+    }
+
+    try {
+      const member = await this.projectService.updateMemberRole(user.userId, req.params.id, req.params.userId, role);
+      reply.send({ success: true, data: member });
+    } catch (err: any) {
+      const status = err.message === 'PROJECT_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
 }

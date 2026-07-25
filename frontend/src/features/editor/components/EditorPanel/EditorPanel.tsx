@@ -125,14 +125,18 @@ const appTheme = EditorView.theme({
   },
 });
 
+import { keymap } from '@codemirror/view';
+
 interface EditorPanelProps {
   value: string;
   onChange: (value: string) => void;
   width: number;
   onWidthChange: (width: number) => void;
+  onSave?: () => void;
+  isReadOnly?: boolean;
 }
 
-export const EditorPanel = memo(function EditorPanel({ value, onChange, width, onWidthChange }: EditorPanelProps): ReactNode {
+export const EditorPanel = memo(function EditorPanel({ value, onChange, width, onWidthChange, onSave, isReadOnly = false }: EditorPanelProps): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const isExternalUpdateRef = useRef(false);
@@ -149,6 +153,16 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
         appTheme,
         dslLinter,
         dslLanguage,
+        EditorState.readOnly.of(isReadOnly),
+        keymap.of([
+          {
+            key: "Mod-s",
+            run: () => {
+              if (onSave) onSave();
+              return true;
+            }
+          }
+        ]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !isExternalUpdateRef.current) {
             onChange(update.state.doc.toString());
@@ -166,7 +180,7 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isReadOnly]);
 
   // Sync external value changes into the editor (without triggering onChange)
   useEffect(() => {
@@ -220,7 +234,20 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
       </div>
 
       {/* Editor */}
-      <div ref={containerRef} className="flex-1 overflow-hidden" />
+      <div 
+        ref={containerRef} 
+        className="flex-1 overflow-hidden" 
+        onKeyDown={(e) => {
+          if (isReadOnly) {
+            // Ignore navigation keys
+            const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', 'Tab', 'Escape'];
+            if (!navKeys.includes(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              const { Toast } = require('@/shared/stores/toast.store');
+              Toast.warning('You only have view permissions for this diagram.');
+            }
+          }
+        }}
+      />
 
       {/* Resize handle */}
       <div

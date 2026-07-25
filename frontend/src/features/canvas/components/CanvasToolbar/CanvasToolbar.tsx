@@ -11,14 +11,16 @@ import {
 } from '@/shared/icons';
 
 interface CanvasToolbarProps {
-  onAddTable: () => void;
-  onAddNote: () => void;
+  onAddTable?: (() => void) | undefined;
+  onAddNote?: (() => void) | undefined;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitView: () => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onPublish: () => void;
+  onPublish?: (() => void) | undefined;
+  onShare?: (() => void) | undefined;
+  onSave?: (() => void) | undefined;
 }
 
 interface ToolButtonProps {
@@ -58,6 +60,8 @@ export function CanvasToolbar({
   isSidebarOpen,
   onToggleSidebar,
   onPublish,
+  onShare,
+  onSave,
 }: CanvasToolbarProps): ReactNode {
   const { activeTool, setTool } = useCanvasInteractionStore();
 
@@ -87,13 +91,17 @@ export function CanvasToolbar({
 
       <Divider />
 
-      <ToolButton label="Add Table (T)" onClick={onAddTable}>
-        <AddIcon size={16} />
-      </ToolButton>
+      {onAddTable && (
+        <ToolButton label="Add Table (T)" onClick={onAddTable}>
+          <AddIcon size={16} />
+        </ToolButton>
+      )}
 
-      <ToolButton label="Add Note (N)" onClick={onAddNote}>
-        <NoteIcon size={16} />
-      </ToolButton>
+      {onAddNote && (
+        <ToolButton label="Add Note (N)" onClick={onAddNote}>
+          <NoteIcon size={16} />
+        </ToolButton>
+      )}
 
       <Divider />
 
@@ -111,12 +119,32 @@ export function CanvasToolbar({
 
       <Divider />
 
-      <button
-        onClick={onPublish}
-        className="ml-1 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors shadow-sm"
-      >
-        Publish
-      </button>
+      {onShare && (
+        <button
+          onClick={onShare}
+          className="ml-1 h-8 px-3 bg-secondary text-secondary-foreground border border-border text-xs font-semibold rounded-md hover:bg-surface-hover transition-colors shadow-sm"
+        >
+          Share
+        </button>
+      )}
+
+      {onPublish && (
+        <button
+          onClick={onPublish}
+          className="ml-1 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          Publish
+        </button>
+      )}
+
+      {onSave && (
+        <button
+          onClick={onSave}
+          className="ml-1 h-8 px-3 bg-blue-600 text-white text-xs font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          Save
+        </button>
+      )}
     </div>
   );
 }

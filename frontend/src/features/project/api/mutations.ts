@@ -3,8 +3,8 @@ import { queryClient } from '@/shared/api/queryClient';
 import { Features } from '@/config/features';
 import { mapProjectResponseToProject } from './mapper';
 import { projectKeys } from './keys';
-import type { ProjectResponse, CreateProjectRequest, UpdateProjectRequest } from '../types/ProjectDTO';
-import type { Project } from '../types/Project';
+import type { ProjectResponse, CreateProjectRequest, UpdateProjectRequest, AddMemberRequest, UpdateMemberRoleRequest, ProjectMemberResponse } from '../types/ProjectDTO';
+import type { Project, ProjectMember } from '../types/Project';
 
 export async function createProject(name: string): Promise<Project> {
   if (Features.mockData) {
@@ -49,4 +49,32 @@ export async function deleteProject(id: string): Promise<void> {
   }
   await apiClient.delete(`/projects/${id}`);
   await queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+}
+
+export async function addMember(projectId: string, email: string, role: 'EDITOR' | 'VIEWER'): Promise<ProjectMember> {
+  if (Features.mockData) {
+    return Promise.resolve({} as ProjectMember);
+  }
+  const body: AddMemberRequest = { email, role };
+  const response = await apiClient.post<ProjectMemberResponse>(`/projects/${projectId}/members`, body);
+  await queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
+  return response.data as unknown as ProjectMember;
+}
+
+export async function updateMemberRole(projectId: string, userId: string, role: 'EDITOR' | 'VIEWER'): Promise<ProjectMember> {
+  if (Features.mockData) {
+    return Promise.resolve({} as ProjectMember);
+  }
+  const body: UpdateMemberRoleRequest = { role };
+  const response = await apiClient.put<ProjectMemberResponse>(`/projects/${projectId}/members/${userId}`, body);
+  await queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
+  return response.data as unknown as ProjectMember;
+}
+
+export async function removeMember(projectId: string, userId: string): Promise<void> {
+  if (Features.mockData) {
+    return Promise.resolve();
+  }
+  await apiClient.delete(`/projects/${projectId}/members/${userId}`);
+  await queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
 }

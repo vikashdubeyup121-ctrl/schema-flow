@@ -1,57 +1,49 @@
 import { DiagramRepository } from '../repository/diagram.repository';
 import { CreateDiagramDto, UpdateDiagramDto, ViewportDto } from '../dto/diagram.dto';
-import { ProjectRepository } from '../../project/repository/project.repository';
+import { ProjectService } from '../../project/service/project.service';
 import { Diagram } from '@prisma/client';
 
 export class DiagramService {
   constructor(
     private readonly diagramRepository: DiagramRepository,
-    private readonly projectRepository: ProjectRepository
+    private readonly projectService: ProjectService
   ) {}
 
   async create(userId: string, projectId: string, dto: CreateDiagramDto): Promise<Diagram> {
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error('PROJECT_NOT_FOUND');
-    if (project.ownerId !== userId) throw new Error('FORBIDDEN');
-
+    await this.projectService.findById(userId, projectId, 'EDITOR');
     return this.diagramRepository.create(projectId, dto.name, dto.description, userId);
   }
 
   async list(userId: string, projectId: string): Promise<Diagram[]> {
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error('PROJECT_NOT_FOUND');
-    if (project.ownerId !== userId) throw new Error('FORBIDDEN');
-
+    await this.projectService.findById(userId, projectId, 'VIEWER');
     return this.diagramRepository.findByProject(projectId);
   }
 
-  async get(userId: string, id: string): Promise<Diagram> {
+  async get(userId: string, id: string, requiredRole: 'OWNER' | 'EDITOR' | 'VIEWER' = 'VIEWER'): Promise<Diagram> {
     const diagram = await this.diagramRepository.findById(id);
     if (!diagram) throw new Error('DIAGRAM_NOT_FOUND');
 
-    const project = await this.projectRepository.findById(diagram.projectId);
-    if (!project || project.ownerId !== userId) throw new Error('FORBIDDEN');
-
+    await this.projectService.findById(userId, diagram.projectId, requiredRole);
     return diagram;
   }
 
   async update(userId: string, id: string, dto: UpdateDiagramDto): Promise<Diagram> {
-    await this.get(userId, id); // validates ownership and existence
-    return this.diagramRepository.update(id, dto);
+    await this.get(userId, id, 'EDITOR'); // validates ownership and existence
+    return this.diagramRepository.update(id, { ...dto, updatedBy: userId });
   }
 
   async delete(userId: string, id: string): Promise<void> {
-    await this.get(userId, id); // validates ownership and existence
+    await this.get(userId, id, 'OWNER'); // validates ownership and existence
     await this.diagramRepository.softDelete(id);
   }
 
   async saveViewport(userId: string, id: string, dto: ViewportDto): Promise<Diagram> {
-    await this.get(userId, id); // validates ownership and existence
+    await this.get(userId, id, 'EDITOR'); // validates ownership and existence
     return this.diagramRepository.saveViewport(id, dto.x, dto.y, dto.zoom);
   }
 
   async publish(userId: string, id: string): Promise<Diagram> {
-    await this.get(userId, id); // validates ownership and existence
+    await this.get(userId, id, 'EDITOR'); // validates ownership and existence
     return this.diagramRepository.publish(id, userId);
   }
 }

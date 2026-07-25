@@ -17,4 +17,10 @@ export const projectRoutes: FastifyPluginAsync = async (app) => {
   app.get('/:id', controller.get);
   app.patch('/:id', controller.update);
   app.delete('/:id', controller.delete);
+
+  // Member management routes
+  app.get('/:id/members', controller.getMembers);
+  app.post('/:id/members', controller.addMember);
+  app.put('/:id/members/:userId', controller.updateMemberRole);
+  app.delete('/:id/members/:userId', controller.removeMember);
 };

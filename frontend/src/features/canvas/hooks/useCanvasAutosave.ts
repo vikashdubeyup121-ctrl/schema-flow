@@ -12,6 +12,7 @@ interface UseCanvasAutosaveOptions {
 interface UseCanvasAutosaveReturn {
   status: AutosaveStatus;
   lastSavedAt: Date | null;
+  flush: () => Promise<void>;
 }
 
 export function useCanvasAutosave({
@@ -21,7 +22,6 @@ export function useCanvasAutosave({
   const [status, setStatus] = useState<AutosaveStatus>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isSavingRef = useRef(false);
 
   const onSaveRef = useRef(onSave);
   useEffect(() => {
@@ -29,8 +29,6 @@ export function useCanvasAutosave({
   }, [onSave]);
 
   const flush = useCallback(async () => {
-    if (isSavingRef.current) return;
-    isSavingRef.current = true;
     setStatus('saving');
     try {
       await onSaveRef.current();
@@ -39,8 +37,6 @@ export function useCanvasAutosave({
     } catch (err) {
       Logger.error('Autosave failed', 'useCanvasAutosave', err);
       setStatus('error');
-    } finally {
-      isSavingRef.current = false;
     }
   }, []);
 
@@ -65,5 +61,5 @@ export function useCanvasAutosave({
     };
   }, [isDirty, flush]);
 
-  return { status, lastSavedAt };
+  return { status, lastSavedAt, flush };
 }

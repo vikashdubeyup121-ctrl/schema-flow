@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, type ReactNode, type KeyboardEvent } from 'react';
 import { useClickOutside } from '@/shared/hooks';
-import { ProjectIcon, MoreHorizontalIcon, EditIcon, DeleteIcon } from '@/shared/icons';
+import { ProjectIcon, MoreHorizontalIcon, EditIcon, DeleteIcon, ShareIcon } from '@/shared/icons';
 import type { Project } from '../../types/Project';
 
 interface ProjectCardProps {
@@ -10,6 +10,7 @@ interface ProjectCardProps {
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onShare: () => void;
 }
 
 export function ProjectCard({
@@ -19,6 +20,7 @@ export function ProjectCard({
   onSelect,
   onRename,
   onDelete,
+  onShare,
 }: ProjectCardProps): ReactNode {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -98,6 +100,19 @@ export function ProjectCard({
               >
                 <EditIcon size={14} />
                 Rename
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onShare();
+                }}
+                className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-surface-hover transition-colors"
+              >
+                <ShareIcon size={14} />
+                Share
               </button>
               <button
                 type="button"
