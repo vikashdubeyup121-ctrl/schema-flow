@@ -33,7 +33,7 @@ export async function updateDiagram(id: string, name: string | undefined, projec
     queryClient.setQueryData<Diagram[]>(diagramKeys.byProject(projectId), (prev = []) =>
       prev.map((d) => (d.id === id ? { ...d, name: name || d.name, dslText, updatedAt: new Date().toISOString() } : d)),
     );
-    return Promise.resolve({ id, name: name || '', projectId, dslText, createdAt: '', updatedAt: '' });
+    return Promise.resolve({ id, name: name || '', projectId, description: undefined, dslText, publishedDslText: undefined, createdAt: '', updatedAt: '' });
   }
   const body: UpdateDiagramRequest = { name, dslText };
   const response = await apiClient.patch<DiagramResponse>(`/diagrams/${id}`, body);
@@ -55,7 +55,7 @@ export async function deleteDiagram(id: string, projectId: string): Promise<void
 
 export async function publishDiagram(id: string, projectId: string): Promise<Diagram> {
   if (Features.mockData) {
-    return Promise.resolve({ id, name: '', projectId, createdAt: '', updatedAt: '' });
+    return Promise.resolve({ id, name: '', projectId, description: undefined, dslText: undefined, publishedDslText: undefined, createdAt: '', updatedAt: '' });
   }
   const response = await apiClient.post<DiagramResponse>(`/diagrams/${id}/publish`);
   const diagram = mapDiagramResponseToDiagram(response.data);

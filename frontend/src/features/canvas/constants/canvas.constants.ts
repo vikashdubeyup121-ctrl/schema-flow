@@ -36,6 +36,7 @@ export type TableColor = (typeof TABLE_COLORS)[number];
 
 export const REVIEW_STATE_COLORS = {
   published: 'hsl(var(--border))',
+  unchanged: 'transparent',
   created: '#16a34a',
   modified: '#d97706',
   deleted: '#dc2626',

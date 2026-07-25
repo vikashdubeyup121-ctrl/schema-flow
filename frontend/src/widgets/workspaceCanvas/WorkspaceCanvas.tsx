@@ -80,7 +80,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const { dslText, onDslChange, syncCanvasToEditor } = useEditorSync({
     nodes,
     edges,
-    publishedDslText: diagram?.publishedDslText,
+    publishedDslText: diagram?.publishedDslText ?? null,
     onNodesChange: (newNodes) => {
       setNodes(newNodes);
       syncNodesToFeatureStores(newNodes, edges);
@@ -106,8 +106,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           } else if (
             change.type === 'add' ||
             change.type === 'remove' ||
-            change.type === 'dimensions' ||
-            change.type === 'reset'
+            change.type === 'dimensions'
           ) {
             shouldSync = true;
           }

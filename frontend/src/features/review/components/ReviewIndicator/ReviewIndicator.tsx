@@ -4,6 +4,7 @@ import { REVIEW_STATE_COLORS } from '@/features/canvas/constants/canvas.constant
 
 const REVIEW_LABELS: Record<ReviewState, string | null> = {
   published: null,
+  unchanged: null,
   created: 'New',
   modified: 'Modified',
   deleted: 'Deleted',

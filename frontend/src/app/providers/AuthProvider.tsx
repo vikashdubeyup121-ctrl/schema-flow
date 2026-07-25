@@ -49,7 +49,7 @@ function RealAuthProvider({ children }: AuthProviderProps): ReactNode {
   // If there's an error but it's not a 401 (e.g. backend is down / PM2 reloading), 
   // we assume the user might still be authenticated based on the token in localStorage.
   const hasToken = !!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-  const isNetworkError = error && (error as any).status !== 401;
+  const isNetworkError = !!(error && (error as any).status !== 401);
 
   useEffect(() => {
     registerForceLogoutHandler(triggerForceLogout);

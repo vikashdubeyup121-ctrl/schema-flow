@@ -2,9 +2,9 @@ export interface Diagram {
   id: string;
   projectId: string;
   name: string;
-  description?: string;
-  dslText?: string | null;
-  publishedDslText?: string | null;
+  description?: string | undefined;
+  dslText?: string | null | undefined;
+  publishedDslText?: string | null | undefined;
   createdAt: string;
   updatedAt: string;
 }

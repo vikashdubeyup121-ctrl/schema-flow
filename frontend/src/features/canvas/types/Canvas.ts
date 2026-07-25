@@ -1,6 +1,6 @@
 import type { Point } from '@/shared/types/Geometry';
 
-export type ReviewState = 'published' | 'created' | 'modified' | 'deleted';
+export type ReviewState = 'published' | 'created' | 'modified' | 'deleted' | 'unchanged';
 
 export type CanvasTool = 'pointer' | 'hand';
 

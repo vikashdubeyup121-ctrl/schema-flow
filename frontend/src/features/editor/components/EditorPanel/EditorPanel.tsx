@@ -21,7 +21,7 @@ const dslLinter = linter((view) => {
   const COLUMN_RE = /^\s*(\w+)\s+(\w+)(?:\s*\[([^\]]*)\])?/;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? '';
     const trimmed = line.trim();
     if (!trimmed || COMMENT_RE.test(trimmed)) continue;
 

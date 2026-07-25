@@ -22,6 +22,6 @@ export interface CreateDiagramRequest {
 }
 
 export interface UpdateDiagramRequest {
-  name?: string;
-  dslText?: string;
+  name?: string | undefined;
+  dslText?: string | undefined;
 }
