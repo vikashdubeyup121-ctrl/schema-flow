@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String
+  pictureUrl    String?        @map("picture_url")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  RefreshTokens RefreshToken[]
+  projects      Project[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  ownerId     String    @map("owner_id")
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  diagrams Diagram[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model Diagram {
+  id                       String    @id @default(uuid())
+  projectId                String    @map("project_id")
+  name                     String
+  description              String?
+  latestPublishedVersionId String?   @map("latest_published_version_id")
+  activeDraftVersionId     String?   @map("active_draft_version_id")
+  viewportX                Float     @default(0) @map("viewport_x")
+  viewportY                Float     @default(0) @map("viewport_y")
+  viewportZoom             Float     @default(1) @map("viewport_zoom")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+  deletedAt                DateTime? @map("deleted_at")
+
+  project  Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions DiagramVersion[]
+
+  @@index([projectId])
+  @@index([updatedAt])
+  @@index([deletedAt])
+  @@map("diagrams")
+}
+
+enum VersionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model DiagramVersion {
+  id               String        @id @default(uuid())
+  diagramId        String        @map("diagram_id")
+  versionNumber    Int           @map("version_number")
+  status           VersionStatus
+  basedOnVersionId String?       @map("based_on_version_id")
+  createdBy        String        @map("created_by")
+  publishedBy      String?       @map("published_by")
+  revisionNumber   Int           @default(1) @map("revision_number")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  publishedAt      DateTime?     @map("published_at")
+
+  diagram       Diagram              @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  tables        SchemaTable[]
+  relationships SchemaRelationship[]
+  notes         SchemaNote[]
+
+  @@index([diagramId])
+  @@map("diagram_versions")
+}
+
+enum ReviewState {
+  UNCHANGED
+  CREATED
+  MODIFIED
+  DELETED
+}
+
+model SchemaTable {
+  id          String      @id @default(uuid())
+  versionId   String      @map("version_id")
+  lineageId   String      @map("lineage_id")
+  name        String
+  description String?
+  color       String?
+  x           Float       @default(0)
+  y           Float       @default(0)
+  width       Float       @default(200)
+  collapsed   Boolean     @default(false)
+  reviewState ReviewState @default(CREATED) @map("review_state")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  version    DiagramVersion       @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  columns    SchemaColumn[]
+  sourceRels SchemaRelationship[] @relation("SourceTable")
+  targetRels SchemaRelationship[] @relation("TargetTable")
+
+  @@index([versionId])
+  @@map("schema_tables")
+}
+
+model SchemaColumn {
+  id           String      @id @default(uuid())
+  tableId      String      @map("table_id")
+  lineageId    String      @map("lineage_id")
+  name         String
+  datatype     String
+  nullable     Boolean     @default(false)
+  primaryKey   Boolean     @default(false) @map("primary_key")
+  uniqueKey    Boolean     @default(false) @map("unique_key")
+  defaultValue String?     @map("default_value")
+  note         String?
+  position     Int         @default(0)
+  reviewState  ReviewState @default(CREATED) @map("review_state")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  table      SchemaTable          @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  sourceRels SchemaRelationship[] @relation("SourceColumn")
+  targetRels SchemaRelationship[] @relation("TargetColumn")
+
+  @@index([tableId])
+  @@map("schema_columns")
+}
+
+model SchemaRelationship {
+  id               String      @id @default(uuid())
+  versionId        String      @map("version_id")
+  lineageId        String      @map("lineage_id")
+  sourceTableId    String      @map("source_table_id")
+  sourceColumnId   String      @map("source_column_id")
+  targetTableId    String      @map("target_table_id")
+  targetColumnId   String      @map("target_column_id")
+  relationshipType String      @map("relationship_type")
+  reviewState      ReviewState @default(CREATED) @map("review_state")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  version      DiagramVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  sourceTable  SchemaTable    @relation("SourceTable", fields: [sourceTableId], references: [id], onDelete: Cascade)
+  sourceColumn SchemaColumn   @relation("SourceColumn", fields: [sourceColumnId], references: [id], onDelete: Cascade)
+  targetTable  SchemaTable    @relation("TargetTable", fields: [targetTableId], references: [id], onDelete: Cascade)
+  targetColumn SchemaColumn   @relation("TargetColumn", fields: [targetColumnId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@map("schema_relationships")
+}
+
+model SchemaNote {
+  id          String      @id @default(uuid())
+  versionId   String      @map("version_id")
+  lineageId   String      @map("lineage_id")
+  title       String?
+  markdown    String
+  color       String?
+  x           Float       @default(0)
+  y           Float       @default(0)
+  width       Float       @default(200)
+  height      Float       @default(150)
+  reviewState ReviewState @default(CREATED) @map("review_state")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  version DiagramVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@map("schema_notes")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  operation  String
+  requestId  String?  @map("request_id")
+  payload    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
