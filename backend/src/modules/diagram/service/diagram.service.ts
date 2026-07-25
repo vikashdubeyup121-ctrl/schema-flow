@@ -49,4 +49,9 @@ export class DiagramService {
     await this.get(userId, id); // validates ownership and existence
     return this.diagramRepository.saveViewport(id, dto.x, dto.y, dto.zoom);
   }
+
+  async publish(userId: string, id: string): Promise<Diagram> {
+    await this.get(userId, id); // validates ownership and existence
+    return this.diagramRepository.publish(id, userId);
+  }
 }

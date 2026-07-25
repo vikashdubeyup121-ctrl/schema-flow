@@ -52,3 +52,14 @@ export async function deleteDiagram(id: string, projectId: string): Promise<void
   await apiClient.delete(`/diagrams/${id}`);
   await queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(projectId) });
 }
+
+export async function publishDiagram(id: string, projectId: string): Promise<Diagram> {
+  if (Features.mockData) {
+    return Promise.resolve({ id, name: '', projectId, createdAt: '', updatedAt: '' });
+  }
+  const response = await apiClient.post<DiagramResponse>(`/diagrams/${id}/publish`);
+  const diagram = mapDiagramResponseToDiagram(response.data);
+  await queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(projectId) });
+  await queryClient.invalidateQueries({ queryKey: diagramKeys.detail(id) });
+  return diagram;
+}

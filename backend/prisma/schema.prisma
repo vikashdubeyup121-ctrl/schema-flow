@@ -45,6 +45,7 @@ model Diagram {
   name                     String
   description              String?
   dslText                  String?   @map("dsl_text")
+  publishedDslText         String?   @map("published_dsl_text")
   latestPublishedVersionId String?   @map("latest_published_version_id")
   activeDraftVersionId     String?   @map("active_draft_version_id")
   viewportX                Float     @default(0) @map("viewport_x")

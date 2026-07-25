@@ -1,8 +1,17 @@
 export interface DiagramResponse {
   id: string;
-  name: string;
   projectId: string;
-  dslText?: string | null;
+  name: string;
+  description?: string | null;
+  latestPublishedVersionId: string | null;
+  activeDraftVersionId: string | null;
+  dslText: string | null;
+  publishedDslText: string | null;
+  viewport: {
+    x: number;
+    y: number;
+    zoom: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

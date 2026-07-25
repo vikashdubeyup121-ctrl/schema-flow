@@ -10,6 +10,7 @@ const DSL_DEBOUNCE_MS = 600;
 interface UseEditorSyncOptions {
   nodes: Node[];
   edges: Edge[];
+  publishedDslText?: string | null;
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
   enabled?: boolean;
@@ -46,7 +47,8 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
         isSyncingFromEditorRef.current = true;
         try {
           const ast = parseDsl(text);
-          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges);
+          const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
+          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges, publishedAst);
           optionsRef.current.onNodesChange(newNodes);
           optionsRef.current.onEdgesChange(newEdges);
         } finally {
@@ -79,13 +81,14 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
     isSyncingFromEditorRef.current = true;
     try {
       const ast = parseDsl(dslText);
-      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], []);
+      const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
+      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst);
       optionsRef.current.onNodesChange(newNodes);
       optionsRef.current.onEdgesChange(newEdges);
     } finally {
       isSyncingFromEditorRef.current = false;
     }
-  }, [options.enabled]);
+  }, [options.enabled, dslText]);
 
   return { dslText, onDslChange, syncCanvasToEditor };
 }

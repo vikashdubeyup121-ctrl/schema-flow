@@ -18,6 +18,7 @@ interface CanvasToolbarProps {
   onFitView: () => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  onPublish: () => void;
 }
 
 interface ToolButtonProps {
@@ -56,6 +57,7 @@ export function CanvasToolbar({
   onFitView,
   isSidebarOpen,
   onToggleSidebar,
+  onPublish,
 }: CanvasToolbarProps): ReactNode {
   const { activeTool, setTool } = useCanvasInteractionStore();
 
@@ -106,6 +108,15 @@ export function CanvasToolbar({
       <ToolButton label="Fit View (Ctrl Shift F)" onClick={onFitView}>
         <MaximizeIcon size={16} />
       </ToolButton>
+
+      <Divider />
+
+      <button
+        onClick={onPublish}
+        className="ml-1 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+      >
+        Publish
+      </button>
     </div>
   );
 }

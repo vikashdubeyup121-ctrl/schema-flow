@@ -103,15 +103,9 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
     >
       {/* Table Header */}
       <div
-        className={`flex items-center gap-2 px-2 select-none ${isSelected ? 'ring-2 ring-inset ring-selected' : ''}`}
-        style={{ height: TABLE.HEADER_HEIGHT, borderBottom: '1px solid hsl(var(--border))' }}
+        className={`flex items-center gap-2 px-3 select-none ${isSelected ? 'ring-2 ring-inset ring-selected' : ''}`}
+        style={{ height: TABLE.HEADER_HEIGHT, backgroundColor: table.color, borderBottom: '1px solid hsl(var(--border))' }}
       >
-        {/* Color accent */}
-        <div
-          className="w-2.5 h-2.5 rounded-sm shrink-0"
-          style={{ backgroundColor: table.color }}
-        />
-
         {/* Table name */}
         {editing ? (
           <input
@@ -120,12 +114,12 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm font-semibold text-foreground border-none outline-none focus:ring-1 focus:ring-ring rounded px-1 min-w-0 nodrag nopan"
+            className="flex-1 bg-transparent text-sm font-semibold text-white border-none outline-none focus:ring-1 focus:ring-white/50 rounded px-1 min-w-0 nodrag nopan"
             autoFocus
           />
         ) : (
           <span
-            className="flex-1 text-sm font-semibold text-foreground truncate cursor-text"
+            className="flex-1 text-sm font-semibold text-white truncate cursor-text"
             onDoubleClick={handleDoubleClick}
             title={table.name}
           >
@@ -134,13 +128,13 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
         )}
 
         {/* Review badge */}
-        <ReviewIndicator reviewState={table.reviewState} className="shrink-0" />
+        <ReviewIndicator reviewState={table.reviewState} className="shrink-0 text-white" />
 
         {/* Collapse toggle */}
         <button
           onClick={handleToggleCollapse}
           aria-label={table.collapsed ? 'Expand table' : 'Collapse table'}
-          className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-0.5 rounded nodrag"
+          className="text-white/80 hover:text-white transition-colors shrink-0 p-0.5 rounded nodrag"
         >
           {table.collapsed ? <ChevronRightIcon size={14} /> : <ChevronDownIcon size={14} />}
         </button>

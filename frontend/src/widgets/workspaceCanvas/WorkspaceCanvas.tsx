@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { diagramQueryOptions } from '@/features/diagram/api/queries';
 import { updateDiagram } from '@/features/diagram/api/mutations';
+import { diagramKeys } from '@/features/diagram/api/keys';
+import { queryClient } from '@/shared/api/queryClient';
 import {
   ReactFlowProvider,
   useReactFlow,
@@ -33,7 +35,7 @@ import { useTableStore } from '@/features/table/stores/table.store';
 import { useColumnStore } from '@/features/column/stores/column.store';
 import { useNoteStore } from '@/features/note/stores/note.store';
 import { useRelationshipStore } from '@/features/relationship/stores/relationship.store';
-import { PropertiesPanel } from '@/widgets/workspace/PropertiesPanel';
+// import { PropertiesPanel } from '@/widgets/workspace/PropertiesPanel';
 
 // ─── Inner component (uses useReactFlow — must be inside ReactFlowProvider) ───
 
@@ -78,6 +80,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const { dslText, onDslChange, syncCanvasToEditor } = useEditorSync({
     nodes,
     edges,
+    publishedDslText: diagram?.publishedDslText,
     onNodesChange: (newNodes) => {
       setNodes(newNodes);
       syncNodesToFeatureStores(newNodes, edges);
@@ -372,6 +375,17 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           onFitView={handleFitView}
           isSidebarOpen={isOpen}
           onToggleSidebar={toggleSidebar}
+          onPublish={async () => {
+            const { publishDiagram } = await import('@/features/diagram/api/mutations');
+            try {
+              await publishDiagram(diagramId, diagram!.projectId);
+              // Force refetch to get updated diagram and clear review states
+              queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
+              window.location.reload(); // Simple way to clear UI states until real-time is set up
+            } catch (err) {
+              console.error('Failed to publish', err);
+            }
+          }}
         />
 
         <CanvasContextMenu
@@ -393,7 +407,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
       </div>
 
       {/* Right: Properties panel */}
-      <PropertiesPanel />
+      {/* <PropertiesPanel /> */}
     </div>
   );
 }

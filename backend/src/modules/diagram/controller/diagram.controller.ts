@@ -90,4 +90,15 @@ export class DiagramController {
       reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
     }
   };
+
+  publish = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    try {
+      const diagram = await this.diagramService.publish(user.userId, req.params.id);
+      reply.send({ success: true, data: DiagramMapper.toResponse(diagram) });
+    } catch (err: any) {
+      const status = err.message === 'DIAGRAM_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
 }

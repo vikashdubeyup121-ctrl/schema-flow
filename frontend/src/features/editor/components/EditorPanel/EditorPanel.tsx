@@ -2,6 +2,85 @@ import { useEffect, useRef, useCallback, type ReactNode, type MouseEvent as Reac
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { linter, type Diagnostic } from '@codemirror/lint';
+import { StreamLanguage } from '@codemirror/language';
+
+// ─── Simple DSL Linter ─────────────────────────────────────────────────────────
+
+const dslLinter = linter((view) => {
+  const diagnostics: Diagnostic[] = [];
+  const doc = view.state.doc;
+  const lines = doc.toString().split('\n');
+
+  let inTable = false;
+
+  const TABLE_OPEN_RE = /^\s*[Tt]able\s+(\w+)\s*\{/;
+  const TABLE_CLOSE_RE = /^\s*\}/;
+  const REF_STATEMENT_RE = /^\s*[Rr]ef(?:\s+\w+)?\s*:\s*(\w+)\.(\w+)\s*([><-])\s*(\w+)\.(\w+)/;
+  const COMMENT_RE = /^\s*\/\//;
+  const COLUMN_RE = /^\s*(\w+)\s+(\w+)(?:\s*\[([^\]]*)\])?/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed || COMMENT_RE.test(trimmed)) continue;
+
+    const from = doc.line(i + 1).from;
+    const to = doc.line(i + 1).to;
+
+    if (TABLE_OPEN_RE.test(line)) {
+      inTable = true;
+      continue;
+    }
+
+    if (TABLE_CLOSE_RE.test(line)) {
+      if (!inTable) {
+        diagnostics.push({
+          from, to, severity: 'error', message: 'Unexpected closing brace without an open table',
+        });
+      }
+      inTable = false;
+      continue;
+    }
+
+    if (REF_STATEMENT_RE.test(line)) {
+      continue;
+    }
+
+    if (inTable) {
+      if (!COLUMN_RE.test(trimmed)) {
+        diagnostics.push({
+          from, to, severity: 'error', message: 'Invalid column definition format',
+        });
+      }
+    } else {
+      diagnostics.push({
+        from, to, severity: 'error', message: 'Expected Table or Ref definition',
+      });
+    }
+  }
+
+  return diagnostics;
+});
+
+// ─── Simple DSL Syntax Highlighter ─────────────────────────────────────────────
+
+const dslLanguage = StreamLanguage.define<{}>({
+  token(stream) {
+    if (stream.eatSpace()) return null;
+    if (stream.match(/^\/\/.*/)) return 'comment';
+    if (stream.match(/^[Tt]able\b/)) return 'keyword';
+    if (stream.match(/^[Rr]ef\b/)) return 'keyword';
+    if (stream.match(/^(varchar|uuid|int|bigint|smallint|decimal|float|double|text|char|boolean|date|timestamp|timestamptz|json|jsonb|bytea|serial|bigserial)\b/i)) return 'type';
+    if (stream.match(/^(pk|primary key|not null|unique|default)\b/i)) return 'modifier';
+    if (stream.match(/^[{}<>\-\[\]\.,:]/)) return 'punctuation';
+    if (stream.match(/^[a-zA-Z_]\w*/)) return 'variableName';
+    if (stream.match(/^[0-9]+/)) return 'number';
+    if (stream.match(/^`[^`]*`/)) return 'string';
+    stream.next();
+    return null;
+  }
+});
 
 const SIDEBAR_MIN_WIDTH = 240;
 const SIDEBAR_MAX_WIDTH = 600;
@@ -68,6 +147,8 @@ export function EditorPanel({ value, onChange, width, onWidthChange }: EditorPan
         basicSetup,
         oneDark,
         appTheme,
+        dslLinter,
+        dslLanguage,
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !isExternalUpdateRef.current) {
             onChange(update.state.doc.toString());
