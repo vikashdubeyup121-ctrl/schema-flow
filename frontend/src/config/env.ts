@@ -12,7 +12,7 @@ function optionalEnv(key: string, fallback: string): string {
 }
 
 export const ENV = {
-  API_BASE_URL: optionalEnv('VITE_API_BASE_URL', 'http://localhost:3000'),
+  API_BASE_URL: optionalEnv('VITE_API_BASE_URL', 'http://localhost:3000/api/v1'),
   GOOGLE_CLIENT_ID: optionalEnv('VITE_GOOGLE_CLIENT_ID', ''),
   IS_PRODUCTION: import.meta.env.PROD,
   IS_DEVELOPMENT: import.meta.env.DEV,

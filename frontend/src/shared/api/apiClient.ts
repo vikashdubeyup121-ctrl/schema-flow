@@ -31,6 +31,12 @@ function createApiClient(): AxiosInstance {
   client.interceptors.response.use(
     (response: AxiosResponse) => {
       Logger.debug(`${response.status} ${response.config.url}`, 'ApiClient');
+      // Unwrap standard `{ success: true, data: T }` envelope
+      if (response.data && response.data.success !== undefined) {
+        if (response.data.success) {
+          response.data = response.data.data;
+        }
+      }
       return response;
     },
     (error) => {

@@ -4,8 +4,8 @@ export const Features = {
   review: true,
   sqlImport: false,
   commandPalette: false,
-  mockAuth: true,
-  mockData: true,
+  mockAuth: false,
+  mockData: false,
 } as const;
 
 export type FeatureKey = keyof typeof Features;
