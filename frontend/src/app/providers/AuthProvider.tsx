@@ -1,7 +1,11 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Features } from '@/config/features';
 import { currentUserQueryOptions } from '@/features/auth/api/queries';
 import { logout } from '@/features/auth/api/mutations';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
+import { registerForceLogoutHandler } from '@/shared/api/apiClient';
+import { MOCK_USER } from '@/features/auth/mock/mockUser';
 import type { User } from '@/features/auth/types/User';
 
 interface AuthContextValue {
@@ -25,18 +29,32 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps): ReactNode {
-  const { data: user, isLoading } = useQuery({
-    ...currentUserQueryOptions,
-  });
+function MockAuthProvider({ children }: AuthProviderProps): ReactNode {
+  const value: AuthContextValue = {
+    user: MOCK_USER,
+    isLoading: false,
+    isAuthenticated: true,
+    logout: async () => {
+      // no-op in mock mode
+    },
+  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function RealAuthProvider({ children }: AuthProviderProps): ReactNode {
+  const { data: user, isLoading } = useQuery({ ...currentUserQueryOptions });
+  const { forceLogout, triggerForceLogout, resetForceLogout } = useAuthStore();
 
   useEffect(() => {
-    const handler = (): void => {
+    registerForceLogoutHandler(triggerForceLogout);
+  }, [triggerForceLogout]);
+
+  useEffect(() => {
+    if (forceLogout) {
+      resetForceLogout();
       void logout();
-    };
-    window.addEventListener('auth:logout', handler);
-    return () => window.removeEventListener('auth:logout', handler);
-  }, []);
+    }
+  }, [forceLogout, resetForceLogout]);
 
   const value: AuthContextValue = {
     user: user ?? null,
@@ -46,4 +64,11 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function AuthProvider({ children }: AuthProviderProps): ReactNode {
+  if (Features.mockAuth) {
+    return <MockAuthProvider>{children}</MockAuthProvider>;
+  }
+  return <RealAuthProvider>{children}</RealAuthProvider>;
 }

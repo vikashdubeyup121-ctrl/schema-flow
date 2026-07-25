@@ -1,0 +1,313 @@
+import { useState, useCallback, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { Avatar } from '@/shared/components/Avatar';
+import { Button } from '@/shared/components/Button';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { ErrorState } from '@/shared/components/ErrorState';
+import {
+  AddIcon,
+  ProjectIcon,
+  DiagramIcon,
+  LogOutIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from '@/shared/icons';
+import {
+  ProjectCard,
+  CreateProjectModal,
+  useProjects,
+  useProjectMutations,
+  useProjectStore,
+} from '@/features/project';
+import {
+  DiagramCard,
+  CreateDiagramModal,
+  useDiagrams,
+  useDiagramMutations,
+} from '@/features/diagram';
+
+// ─── Skeleton loaders ─────────────────────────────────────────────────────────
+
+function ProjectSkeleton(): ReactNode {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+      <div className="w-10 h-10 rounded-lg bg-surface animate-pulse" />
+      <div className="h-4 w-3/4 rounded bg-surface animate-pulse" />
+      <div className="h-3 w-1/2 rounded bg-surface animate-pulse" />
+    </div>
+  );
+}
+
+function DiagramSkeleton(): ReactNode {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+      <div className="w-9 h-9 rounded-lg bg-surface animate-pulse" />
+      <div className="h-4 w-2/3 rounded bg-surface animate-pulse" />
+      <div className="h-3 w-1/3 rounded bg-surface animate-pulse" />
+    </div>
+  );
+}
+
+// ─── Diagram section (shown when a project is selected) ────────────────────────
+
+interface DiagramSectionProps {
+  projectId: string;
+  onNavigate: (diagramId: string) => void;
+}
+
+function DiagramSection({ projectId, onNavigate }: DiagramSectionProps): ReactNode {
+  const { diagrams, isLoading, isError } = useDiagrams(projectId);
+  const { create, update, remove } = useDiagramMutations();
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const handleCreate = useCallback(
+    (name: string) => {
+      create.mutate(
+        { name, projectId },
+        { onSuccess: () => setCreateOpen(false) },
+      );
+    },
+    [create, projectId],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <DiagramSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="mt-4 text-sm text-danger">
+        Failed to load diagrams.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-4">
+        {diagrams.map((diagram) => (
+          <DiagramCard
+            key={diagram.id}
+            diagram={diagram}
+            onOpen={() => onNavigate(diagram.id)}
+            onRename={(name) =>
+              update.mutate({ id: diagram.id, name, projectId })
+            }
+            onDelete={() => remove.mutate({ id: diagram.id, projectId })}
+          />
+        ))}
+
+        {/* New diagram card */}
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all duration-150 p-4 min-h-[100px]"
+        >
+          <AddIcon size={20} />
+          <span className="text-xs font-medium">New Diagram</span>
+        </button>
+      </div>
+
+      {diagrams.length === 0 && !isLoading && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          No diagrams yet. Create your first one above.
+        </p>
+      )}
+
+      <CreateDiagramModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+        isLoading={create.isPending}
+      />
+    </>
+  );
+}
+
+// ─── Main DashboardWidget ─────────────────────────────────────────────────────
+
+export function DashboardWidget(): ReactNode {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { projects, isLoading, isError, refetch } = useProjects();
+  const { create, update, remove } = useProjectMutations();
+  const { selectedProjectId, setSelectedProject } = useProjectStore();
+  const [createOpen, setCreateOpen] = useState(false);
+
+  // Pre-fetch diagram counts — diagrams are loaded lazily per project
+  // diagramCount is shown on each project card from the query cache if available
+
+  const handleCreateProject = useCallback(
+    (name: string) => {
+      create.mutate(name, {
+        onSuccess: (project) => {
+          setCreateOpen(false);
+          setSelectedProject(project.id);
+        },
+      });
+    },
+    [create, setSelectedProject],
+  );
+
+  const handleSelectProject = useCallback(
+    (id: string) => {
+      setSelectedProject(selectedProjectId === id ? null : id);
+    },
+    [selectedProjectId, setSelectedProject],
+  );
+
+  const handleNavigateToDiagram = useCallback(
+    (diagramId: string) => {
+      navigate(`/workspace/${diagramId}`);
+    },
+    [navigate],
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Top nav */}
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <LayersLogo />
+            <span className="text-base font-semibold text-foreground">SchemaFlow</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              leftIcon={<AddIcon size={14} />}
+              onClick={() => setCreateOpen(true)}
+            >
+              New Project
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Avatar src={user?.avatarUrl ?? null} name={user?.name ?? ''} size="sm" />
+              <button
+                onClick={() => { void logout(); }}
+                aria-label="Log out"
+                title="Log out"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+              >
+                <LogOutIcon size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {user?.name ? `Welcome back, ${user.name.split(' ')[0]}.` : 'Your database schemas.'}
+          </p>
+        </div>
+
+        {/* Error state */}
+        {isError && (
+          <ErrorState
+            title="Failed to load projects"
+            message="There was a problem fetching your projects."
+            onRetry={refetch}
+          />
+        )}
+
+        {/* Loading state */}
+        {isLoading && !isError && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <ProjectSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !isError && projects.length === 0 && (
+          <EmptyState
+            icon={<ProjectIcon size={48} />}
+            title="No projects yet"
+            description="Create your first project to start designing database schemas."
+            action={
+              <Button
+                leftIcon={<AddIcon size={14} />}
+                onClick={() => setCreateOpen(true)}
+              >
+                New Project
+              </Button>
+            }
+          />
+        )}
+
+        {/* Project grid */}
+        {!isLoading && !isError && projects.length > 0 && (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  diagramCount={0}
+                  isSelected={selectedProjectId === project.id}
+                  onSelect={() => handleSelectProject(project.id)}
+                  onRename={(name) => update.mutate({ id: project.id, name })}
+                  onDelete={() => remove.mutate(project.id)}
+                />
+              ))}
+            </div>
+
+            {/* Expanded project — diagram section */}
+            {selectedProjectId && (
+              <section className="border border-border rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 bg-surface border-b border-border">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    {selectedProjectId ? (
+                      <ChevronDownIcon size={16} className="text-muted-foreground" />
+                    ) : (
+                      <ChevronRightIcon size={16} className="text-muted-foreground" />
+                    )}
+                    <DiagramIcon size={16} className="text-muted-foreground" />
+                    {projects.find((p) => p.id === selectedProjectId)?.name}
+                  </div>
+                </div>
+                <div className="p-5">
+                  <DiagramSection
+                    projectId={selectedProjectId}
+                    onNavigate={handleNavigateToDiagram}
+                  />
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Create project modal */}
+      <CreateProjectModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreateProject}
+        isLoading={create.isPending}
+      />
+    </div>
+  );
+}
+
+// Inline SVG logo to avoid icon dependency
+function LayersLogo(): ReactNode {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  );
+}

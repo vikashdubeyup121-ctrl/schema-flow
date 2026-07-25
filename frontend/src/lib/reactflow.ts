@@ -1,5 +1,6 @@
 export {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -7,6 +8,8 @@ export {
   useEdgesState,
   useReactFlow,
   addEdge,
+  getSmoothStepPath,
+  EdgeLabelRenderer,
   Panel,
   BackgroundVariant,
   MarkerType,

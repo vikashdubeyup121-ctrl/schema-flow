@@ -4,6 +4,12 @@ import { STORAGE_KEYS } from '@/shared/constants/Storage';
 import { Logger } from '@/shared/services/logger.service';
 import { parseApiError } from './errorHandler';
 
+let onForceLogout: (() => void) | null = null;
+
+export function registerForceLogoutHandler(handler: () => void): void {
+  onForceLogout = handler;
+}
+
 function createApiClient(): AxiosInstance {
   const client = axios.create({
     baseURL: ENV.API_BASE_URL,
@@ -24,10 +30,7 @@ function createApiClient(): AxiosInstance {
 
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      Logger.debug(
-        `${response.status} ${response.config.url}`,
-        'ApiClient',
-      );
+      Logger.debug(`${response.status} ${response.config.url}`, 'ApiClient');
       return response;
     },
     (error) => {
@@ -35,7 +38,7 @@ function createApiClient(): AxiosInstance {
 
       if (parsed.status === 401) {
         localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        window.dispatchEvent(new CustomEvent('auth:logout'));
+        onForceLogout?.();
       }
 
       return Promise.reject(parsed);

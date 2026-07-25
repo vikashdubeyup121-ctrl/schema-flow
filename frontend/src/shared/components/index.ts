@@ -1,7 +1,10 @@
 export { Avatar } from './Avatar';
 export { Badge } from './Badge';
+export { Button } from './Button';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
+export { Input } from './Input';
+export { Modal } from './Modal';
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 export { Skeleton } from './Skeleton';

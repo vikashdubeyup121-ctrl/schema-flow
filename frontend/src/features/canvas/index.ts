@@ -1,0 +1,24 @@
+export { CanvasCore } from './components/CanvasCore';
+export { CanvasToolbar } from './components/CanvasToolbar';
+export { CanvasContextMenu } from './components/CanvasContextMenu';
+export { CanvasStatusBar } from './components/CanvasStatusBar';
+export { TableNode } from './components/TableNode';
+export { NoteNode } from './components/NoteNode';
+export { RelationshipEdge } from './components/RelationshipEdge';
+
+export { useCanvasAutosave } from './hooks/useCanvasAutosave';
+export { useCanvasHover } from './hooks/useCanvasHover';
+export { useCanvasContextMenu } from './hooks/useCanvasContextMenu';
+export { useCanvasKeyboard } from './hooks/useCanvasKeyboard';
+
+export { useCanvasViewportStore } from './stores/canvasViewport.store';
+export { useCanvasSelectionStore } from './stores/canvasSelection.store';
+export { useCanvasInteractionStore } from './stores/canvasInteraction.store';
+export { useCanvasHoverStore } from './stores/canvasHover.store';
+export { useCanvasContextMenuStore } from './stores/canvasContextMenu.store';
+export { useCanvasClipboardStore } from './stores/canvasClipboard.store';
+
+export type { AutosaveStatus } from './hooks/useCanvasAutosave';
+export type { TableNodeData, NoteNodeData, RelationshipEdgeData, CanvasColumn, ColumnDataType } from './types/CanvasNode';
+export type { ReviewState, CanvasTool, CanvasTargetType, RelationshipType } from './types/Canvas';
+export { InteractionMode } from './types/InteractionMode';

@@ -3,6 +3,6 @@ export const EDITOR = {
   MAX_ZOOM: 2.0,
   DEFAULT_ZOOM: 1.0,
   ZOOM_STEP: 0.1,
-  AUTOSAVE_INTERVAL_MS: 3000,
+  AUTOSAVE_INTERVAL_MS: 2000,
   GRID_SIZE: 20,
 } as const;
