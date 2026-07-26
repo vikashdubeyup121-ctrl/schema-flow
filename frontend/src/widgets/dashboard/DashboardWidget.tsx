@@ -6,6 +6,8 @@ import { Button } from '@/shared/components/Button';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { useProjectStore } from '@/features/project/stores/project.store';
+import { useThemeStore } from '@/shared/stores/theme.store';
 import {
   AddIcon,
   ProjectIcon,
@@ -13,6 +15,8 @@ import {
   LogOutIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  SunIcon,
+  MoonIcon,
 } from '@/shared/icons';
 import {
   ProjectCard,
@@ -20,7 +24,6 @@ import {
   ManageMembersModal,
   useProjects,
   useProjectMutations,
-  useProjectStore,
 } from '@/features/project';
 import {
   DiagramCard,
@@ -138,6 +141,7 @@ function DiagramSection({ projectId, onNavigate, onDeleteRequest }: DiagramSecti
 export function DashboardWidget(): ReactNode {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { resolvedTheme, setTheme } = useThemeStore();
   const { projects, isLoading, isError, refetch } = useProjects();
   const { create, update, remove } = useProjectMutations();
   const { remove: removeDiagram } = useDiagramMutations();
@@ -197,7 +201,21 @@ export function DashboardWidget(): ReactNode {
             </Button>
 
             <div className="flex items-center gap-2">
-              <Avatar src={user?.avatarUrl ?? null} name={user?.name ?? ''} size="sm" />
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                aria-label="Toggle theme"
+                title="Toggle theme"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+              >
+                {resolvedTheme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+              </button>
+              <button
+                onClick={() => navigate('/profile')}
+                title="View Profile"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Avatar src={user?.avatarUrl ?? null} name={user?.name ?? ''} size="sm" />
+              </button>
               <button
                 onClick={() => { void logout(); }}
                 aria-label="Log out"

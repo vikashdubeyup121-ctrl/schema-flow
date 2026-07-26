@@ -16,9 +16,15 @@ export async function loginWithGoogle(request: LoginWithGoogleRequest): Promise<
 
 export async function logout(): Promise<void> {
   try {
-    await apiClient.post('/auth/logout');
+    const hasToken = !!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    if (hasToken) {
+      await apiClient.post('/auth/logout').catch(() => {});
+    }
   } finally {
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     queryClient.clear();
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
   }
 }

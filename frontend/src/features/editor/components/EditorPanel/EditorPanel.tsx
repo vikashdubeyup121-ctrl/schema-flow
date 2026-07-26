@@ -115,13 +115,13 @@ const appTheme = EditorView.theme({
     backgroundColor: 'transparent',
   },
   '.cm-activeLine': {
-    backgroundColor: 'hsl(var(--surface))',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   '.cm-selectionBackground': {
-    backgroundColor: 'hsl(var(--primary) / 0.2) !important',
+    backgroundColor: 'rgba(59, 130, 246, 0.4) !important',
   },
   '.cm-cursor': {
-    borderLeftColor: 'hsl(var(--primary))',
+    borderLeftColor: '#3b82f6',
   },
 });
 
@@ -178,6 +178,7 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
                 window.dispatchEvent(new CustomEvent('canvas:scroll-to-table', { detail: match[1] }));
               }
             }
+            return false;
           }
         }),
         EditorView.lineWrapping,
