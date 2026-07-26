@@ -56,6 +56,7 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
     if (!table) return;
     setEditValue(table.name);
     setEditing(true);
+    window.dispatchEvent(new CustomEvent('editor:scroll-to-table', { detail: table.name }));
     setTimeout(() => inputRef.current?.select(), 0);
   }, [table]);
 

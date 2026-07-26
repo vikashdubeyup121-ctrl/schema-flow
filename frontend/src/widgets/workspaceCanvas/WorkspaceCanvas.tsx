@@ -48,7 +48,7 @@ interface WorkspaceCanvasInnerProps {
 }
 
 function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNode {
-  const { zoomIn, zoomOut, fitView, screenToFlowPosition } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, screenToFlowPosition, setCenter } = useReactFlow();
   const { x: menuX, y: menuY } = useCanvasContextMenuStore();
   const selectMultipleTables = useCanvasSelectionStore((s) => s.selectMultipleTables);
   const isOpen = useEditorStore((s) => s.isOpen);
@@ -389,6 +389,21 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     window.addEventListener('canvas:change-table-color', handleColorChange as EventListener);
     return () => window.removeEventListener('canvas:change-table-color', handleColorChange as EventListener);
   }, [handleChangeTableColor]);
+
+  useEffect(() => {
+    const handleScrollToTable = (e: CustomEvent<string>) => {
+      const tableName = e.detail;
+      const node = nodes.find(n => n.type === 'table' && (n.data as unknown as TableNodeData).name === tableName);
+      if (node) {
+        const x = node.position.x + (node.width ?? 240) / 2;
+        const y = node.position.y + (node.height ?? 200) / 2;
+        setCenter(x, y, { zoom: 1, duration: 800 });
+        selectMultipleTables([(node.data as unknown as TableNodeData).tableId]);
+      }
+    };
+    window.addEventListener('canvas:scroll-to-table', handleScrollToTable as EventListener);
+    return () => window.removeEventListener('canvas:scroll-to-table', handleScrollToTable as EventListener);
+  }, [nodes, setCenter, selectMultipleTables]);
 
   const handleChangeRelationshipType = useCallback(
     (relId: string, relationshipType: RelationshipType) => {

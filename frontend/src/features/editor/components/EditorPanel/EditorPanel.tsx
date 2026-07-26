@@ -168,6 +168,18 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
             onChange(update.state.doc.toString());
           }
         }),
+        EditorView.domEventHandlers({
+          dblclick(e, view) {
+            const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+            if (pos !== null) {
+              const line = view.state.doc.lineAt(pos);
+              const match = /^\s*[Tt]able\s+(\w+)\s*\{/.exec(line.text);
+              if (match && match[1]) {
+                window.dispatchEvent(new CustomEvent('canvas:scroll-to-table', { detail: match[1] }));
+              }
+            }
+          }
+        }),
         EditorView.lineWrapping,
       ],
     });
@@ -175,7 +187,23 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
 
+    const handleScrollToTable = (e: CustomEvent<string>) => {
+      if (!viewRef.current) return;
+      const v = viewRef.current;
+      const doc = v.state.doc.toString();
+      const regex = new RegExp(`^\\s*[Tt]able\\s+${e.detail}\\s*\\{`, 'm');
+      const match = regex.exec(doc);
+      if (match) {
+        v.dispatch({
+          selection: { anchor: match.index },
+          effects: EditorView.scrollIntoView(match.index, { y: 'center' })
+        });
+      }
+    };
+    window.addEventListener('editor:scroll-to-table', handleScrollToTable as EventListener);
+
     return () => {
+      window.removeEventListener('editor:scroll-to-table', handleScrollToTable as EventListener);
       view.destroy();
       viewRef.current = null;
     };
