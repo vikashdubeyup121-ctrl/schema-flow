@@ -8,6 +8,8 @@ import {
   ZoomOutIcon,
   MaximizeIcon,
   SidebarIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from '@/shared/icons';
 
 interface CanvasToolbarProps {
@@ -21,6 +23,8 @@ interface CanvasToolbarProps {
   onPublish?: (() => void) | undefined;
   onShare?: (() => void) | undefined;
   onSave?: (() => void) | undefined;
+  showOnlyChanges?: boolean;
+  onToggleShowChanges?: () => void;
 }
 
 interface ToolButtonProps {
@@ -62,6 +66,8 @@ export function CanvasToolbar({
   onPublish,
   onShare,
   onSave,
+  showOnlyChanges,
+  onToggleShowChanges,
 }: CanvasToolbarProps): ReactNode {
   const { activeTool, setTool } = useCanvasInteractionStore();
 
@@ -102,6 +108,16 @@ export function CanvasToolbar({
           <NoteIcon size={16} />
         </ToolButton>
       )}
+
+      <Divider />
+
+      <ToolButton
+        label={showOnlyChanges ? 'Show all entities' : 'Show only changes'}
+        active={showOnlyChanges}
+        onClick={() => onToggleShowChanges?.()}
+      >
+        {showOnlyChanges ? <EyeIcon size={16} /> : <EyeOffIcon size={16} />}
+      </ToolButton>
 
       <Divider />
 

@@ -7,13 +7,14 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from '@/shared/icons';
+import { ChevronDownIcon, ChevronRightIcon, SettingsIcon } from '@/shared/icons';
 import { useTableStore } from '../../stores/table.store';
 import { useCanvasSelectionStore } from '@/features/canvas/stores/canvasSelection.store';
 import { useCanvasHoverStore } from '@/features/canvas/stores/canvasHover.store';
-import { REVIEW_STATE_COLORS } from '@/features/canvas/constants/canvas.constants';
+import { REVIEW_STATE_COLORS, TABLE_COLORS } from '@/features/canvas/constants/canvas.constants';
 import { ReviewIndicator } from '@/features/review';
 import { ColumnList } from '@/features/column/components/ColumnList';
+import { useClickOutside } from '@/shared/hooks';
 import { TABLE } from './Table.constants';
 import type { TableProps } from './Table.types';
 
@@ -31,6 +32,25 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  useClickOutside(settingsRef, () => setIsSettingsOpen(false));
+
+  const handleToggleSettings = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
+    setIsSettingsOpen((prev) => !prev);
+  }, []);
+
+  const handleChangeColor = useCallback((color: string) => {
+    // Optimistic UI update
+    updateTable(tableId, { color });
+    // Dispatch to WorkspaceCanvas to sync to React Flow nodes and DSL
+    window.dispatchEvent(new CustomEvent('canvas:change-table-color', {
+      detail: { tableId, color }
+    }));
+    setIsSettingsOpen(false);
+  }, [updateTable, tableId]);
 
   const handleDoubleClick = useCallback(() => {
     if (!table) return;
@@ -129,6 +149,64 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
 
         {/* Review badge */}
         <ReviewIndicator reviewState={table.reviewState} className="shrink-0 text-white" />
+
+        {/* Settings / Color Picker */}
+        <div ref={settingsRef} className="relative">
+          <button
+            onClick={handleToggleSettings}
+            aria-label="Table settings"
+            className="text-white/80 hover:text-white transition-colors shrink-0 p-0.5 rounded nodrag"
+          >
+            <SettingsIcon size={14} />
+          </button>
+          
+          {isSettingsOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl p-2 z-50 flex flex-col gap-2 nodrag">
+              <div className="flex gap-1">
+                {TABLE_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleChangeColor(c);
+                    }}
+                    className={`w-5 h-5 rounded-full border border-white/20 hover:scale-110 transition-transform ${table.color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-card' : ''}`}
+                    style={{ backgroundColor: c }}
+                    aria-label={`Select color ${c}`}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2 px-1">
+                <span className="text-xs text-muted-foreground font-medium">Hex</span>
+                <input
+                  type="text"
+                  value={table.color}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateTable(tableId, { color: val });
+                  }}
+                  onBlur={(e) => {
+                    window.dispatchEvent(new CustomEvent('canvas:change-table-color', {
+                      detail: { tableId, color: e.target.value }
+                    }));
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                      window.dispatchEvent(new CustomEvent('canvas:change-table-color', {
+                        detail: { tableId, color: (e.target as HTMLInputElement).value }
+                      }));
+                      setIsSettingsOpen(false);
+                    }
+                  }}
+                  className="w-full bg-background border border-border rounded px-2 py-0.5 text-xs text-foreground outline-none focus:border-primary"
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Collapse toggle */}
         <button

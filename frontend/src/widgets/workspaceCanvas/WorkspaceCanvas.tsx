@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { diagramQueryOptions } from '@/features/diagram/api/queries';
 import { updateDiagram } from '@/features/diagram/api/mutations';
@@ -79,6 +79,35 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [showOnlyChanges, setShowOnlyChanges] = useState(false);
+
+  // Compute display nodes and edges based on showOnlyChanges filter
+  const displayNodes = useMemo(() => {
+    if (!showOnlyChanges) return nodes;
+    return nodes.map((n) => {
+      if (n.type === 'table') {
+        const data = n.data as unknown as TableNodeData;
+        const hasModifiedColumns = data.columns.some(
+          c => c.reviewState === 'created' || c.reviewState === 'modified' || c.reviewState === 'deleted'
+        );
+        if ((data.reviewState === 'unchanged' || data.reviewState === 'published') && !hasModifiedColumns) {
+          return { ...n, hidden: true };
+        }
+      }
+      return n;
+    });
+  }, [nodes, showOnlyChanges]);
+
+  const displayEdges = useMemo(() => {
+    if (!showOnlyChanges) return edges;
+    const visibleNodeIds = new Set(displayNodes.filter(n => !n.hidden).map(n => n.id));
+    return edges.map((e) => {
+      return {
+        ...e,
+        hidden: !visibleNodeIds.has(e.source) || !visibleNodeIds.has(e.target)
+      };
+    });
+  }, [edges, displayNodes, showOnlyChanges]);
 
   // Initialize DSL from DB when loaded
   useEffect(() => {
@@ -345,12 +374,21 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           }
           return n;
         });
+        syncCanvasToEditor(newNodes, edges);
         return newNodes;
       });
       setIsDirty(true);
     },
-    [],
+    [edges, syncCanvasToEditor],
   );
+
+  useEffect(() => {
+    const handleColorChange = (e: CustomEvent<{ tableId: string; color: string }>) => {
+      handleChangeTableColor(e.detail.tableId, e.detail.color);
+    };
+    window.addEventListener('canvas:change-table-color', handleColorChange as EventListener);
+    return () => window.removeEventListener('canvas:change-table-color', handleColorChange as EventListener);
+  }, [handleChangeTableColor]);
 
   const handleChangeRelationshipType = useCallback(
     (relId: string, relationshipType: RelationshipType) => {
@@ -403,8 +441,8 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
       {/* Center: Canvas */}
       <div className="relative flex-1 overflow-hidden">
         <CanvasCore
-          nodes={nodes}
-          edges={edges}
+          nodes={displayNodes}
+          edges={displayEdges}
           nodesDraggable={!isReadOnly}
           nodesConnectable={!isReadOnly}
           isReadOnly={isReadOnly}
@@ -440,6 +478,8 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           {...(isOwner && {
             onShare: () => setIsShareOpen(true),
           })}
+          showOnlyChanges={showOnlyChanges}
+          onToggleShowChanges={() => setShowOnlyChanges(prev => !prev)}
         />
 
         {!isReadOnly && (

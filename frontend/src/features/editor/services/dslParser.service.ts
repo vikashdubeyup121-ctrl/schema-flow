@@ -92,7 +92,15 @@ export function parseDsl(dsl: string): DslAst {
   let currentTable: DslTable | null = null;
 
   for (const line of lines) {
-    if (COMMENT_RE.test(line)) continue;
+    if (COMMENT_RE.test(line)) {
+      if (currentTable) {
+        const colorMatch = /@color:\s*(#[0-9a-fA-F]{3,8}|[a-zA-Z]+)/.exec(line);
+        if (colorMatch && colorMatch[1]) {
+          currentTable.color = colorMatch[1];
+        }
+      }
+      continue;
+    }
 
     if (TABLE_OPEN_RE.test(line)) {
       const match = TABLE_OPEN_RE.exec(line);

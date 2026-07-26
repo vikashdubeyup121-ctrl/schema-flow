@@ -4,6 +4,10 @@ import type { TableNodeData, RelationshipEdgeData } from '@/features/canvas/type
 function serializeTable(data: TableNodeData): string {
   const lines: string[] = [`Table ${data.name} {`];
 
+  if (data.color) {
+    lines.push(`  // @color: ${data.color}`);
+  }
+
   for (const col of data.columns) {
     const constraints: string[] = [];
 

@@ -14,6 +14,7 @@ export interface DslColumn {
 export interface DslTable {
   name: string;
   columns: DslColumn[];
+  color?: string;
 }
 
 export interface DslRef {

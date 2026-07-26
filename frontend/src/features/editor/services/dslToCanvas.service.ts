@@ -72,7 +72,7 @@ function buildTableNode(
   const data: TableNodeData = {
     tableId: id,
     name: dslTable.name,
-    color: existingData?.color ?? (TABLE_COLORS[colorIndex] ?? TABLE_COLORS[0]),
+    color: dslTable.color ?? existingData?.color ?? (TABLE_COLORS[colorIndex] ?? TABLE_COLORS[0]),
     collapsed: existingData?.collapsed ?? false,
     reviewState: tableReviewState,
     columns,
