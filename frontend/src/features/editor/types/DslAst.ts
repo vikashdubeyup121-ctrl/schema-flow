@@ -9,6 +9,7 @@ export interface DslColumn {
   defaultValue: string | null;
   refTarget: string | null;
   refType: RefType | null;
+  note?: string | null;
 }
 
 export interface DslTable {

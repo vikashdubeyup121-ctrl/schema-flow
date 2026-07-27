@@ -11,9 +11,18 @@ const COMMENT_RE = /^\s*\/\//;
 
 function parseConstraintBlock(raw: string): Partial<DslColumn> {
   const result: Partial<DslColumn> = {};
-  const parts = raw.split(',').map((p) => p.trim().toLowerCase());
+  
+  let constraintStr = raw;
+  const noteMatch = /note:\s*(?:"([^"]+)"|'([^']+)')/i.exec(constraintStr);
+  if (noteMatch) {
+    result.note = noteMatch[1] || noteMatch[2];
+    constraintStr = constraintStr.replace(noteMatch[0], '');
+  }
+
+  const parts = constraintStr.split(',').map((p) => p.trim().toLowerCase());
 
   for (const part of parts) {
+    if (!part) continue;
     if (part === 'pk' || part === 'primary key') {
       result.primaryKey = true;
       result.notNull = true;
@@ -61,6 +70,7 @@ function parseColumnLine(line: string): DslColumn | null {
     defaultValue: constraints.defaultValue ?? null,
     refTarget: constraints.refTarget ?? null,
     refType: constraints.refType ?? null,
+    note: constraints.note ?? null,
   };
 }
 

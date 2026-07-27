@@ -15,6 +15,7 @@ function serializeTable(data: TableNodeData): string {
     else if (!col.nullable) constraints.push('not null');
     if (col.unique) constraints.push('unique');
     if (col.defaultValue) constraints.push(`default: \`${col.defaultValue}\``);
+    if (col.note) constraints.push(`note: "${col.note}"`);
     if (col.foreignKey) constraints.push('// fk');
 
     const constraintStr = constraints.length > 0 ? ` [${constraints.join(', ')}]` : '';

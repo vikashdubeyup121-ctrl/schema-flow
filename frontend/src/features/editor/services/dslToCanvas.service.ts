@@ -52,7 +52,7 @@ function buildTableNode(
       foreignKey: col.refTarget !== null,
       unique: col.unique,
       defaultValue: col.defaultValue,
-      note: null,
+      note: col.note ?? null,
       reviewState,
       position: colIndex,
     };

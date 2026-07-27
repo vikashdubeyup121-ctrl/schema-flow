@@ -2,6 +2,8 @@ import { memo, type ReactNode } from 'react';
 import { Handle, Position } from '@/lib/reactflow';
 import { useColumnStore } from '../../stores/column.store';
 import { REVIEW_STATE_COLORS } from '@/features/canvas/constants/canvas.constants';
+import { NoteIcon } from '@/shared/icons';
+import { PopoverTooltip } from '@/shared/components/Tooltip/PopoverTooltip';
 
 interface ColumnRowProps {
   columnId: string;
@@ -35,7 +37,8 @@ export const ColumnRow = memo(function ColumnRow({ columnId }: ColumnRowProps): 
   const showReviewBar = column.reviewState !== 'published' && column.reviewState !== 'unchanged';
 
   return (
-    <div
+    <PopoverTooltip
+      content={column.note}
       className={`relative flex items-center gap-2 px-3 group/col border-b border-border/40 last:border-b-0 ${
         isDeleted ? 'opacity-50' : ''
       }`}
@@ -64,12 +67,19 @@ export const ColumnRow = memo(function ColumnRow({ columnId }: ColumnRowProps): 
       </div>
 
       {/* Column name */}
-      <span
-        className={`flex-1 text-xs text-foreground truncate ${isDeleted ? 'line-through' : ''}`}
-        title={column.name}
-      >
-        {column.name}
-      </span>
+      <div className="flex-1 flex items-center gap-1.5 overflow-hidden">
+        <span
+          className={`text-xs text-foreground truncate ${isDeleted ? 'line-through' : ''}`}
+          title={column.name}
+        >
+          {column.name}
+        </span>
+        {column.note && (
+          <div className="text-muted-foreground/70 shrink-0">
+            <NoteIcon size={12} />
+          </div>
+        )}
+      </div>
 
       {/* Data type */}
       <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
@@ -86,6 +96,6 @@ export const ColumnRow = memo(function ColumnRow({ columnId }: ColumnRowProps): 
         style={{ top: '50%', transform: 'translateY(-50%)' }}
         data-tableid={column.tableId}
       />
-    </div>
+    </PopoverTooltip>
   );
 });

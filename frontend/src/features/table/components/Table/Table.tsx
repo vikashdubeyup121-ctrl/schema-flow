@@ -29,10 +29,6 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
   const isHoverActive = hoveredId !== null;
   const isConnected = useCanvasHoverStore((s) => s.highlightedTableIds.has(tableId));
 
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   useClickOutside(settingsRef, () => setIsSettingsOpen(false));
@@ -43,9 +39,7 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
   }, []);
 
   const handleChangeColor = useCallback((color: string) => {
-    // Optimistic UI update
     updateTable(tableId, { color });
-    // Dispatch to WorkspaceCanvas to sync to React Flow nodes and DSL
     window.dispatchEvent(new CustomEvent('canvas:change-table-color', {
       detail: { tableId, color }
     }));
@@ -54,33 +48,8 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
 
   const handleDoubleClick = useCallback(() => {
     if (!table) return;
-    setEditValue(table.name);
-    setEditing(true);
     window.dispatchEvent(new CustomEvent('editor:scroll-to-table', { detail: table.name }));
-    setTimeout(() => inputRef.current?.select(), 0);
   }, [table]);
-
-  const commitEdit = useCallback(() => {
-    if (!table) return;
-    const trimmed = editValue.trim();
-    if (trimmed && trimmed !== table.name) {
-      updateTable(tableId, { name: trimmed });
-    }
-    setEditing(false);
-  }, [editValue, table, tableId, updateTable]);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
-      if (!table) return;
-      if (e.key === 'Enter') commitEdit();
-      if (e.key === 'Escape') {
-        setEditValue(table.name);
-        setEditing(false);
-      }
-      e.stopPropagation();
-    },
-    [commitEdit, table],
-  );
 
   const handleToggleCollapse = useCallback(
     (e: MouseEvent) => {
@@ -128,25 +97,13 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
         style={{ height: TABLE.HEADER_HEIGHT, backgroundColor: table.color, borderBottom: '1px solid hsl(var(--border))' }}
       >
         {/* Table name */}
-        {editing ? (
-          <input
-            ref={inputRef}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm font-semibold text-white border-none outline-none focus:ring-1 focus:ring-white/50 rounded px-1 min-w-0 nodrag nopan"
-            autoFocus
-          />
-        ) : (
-          <span
-            className="flex-1 text-sm font-semibold text-white truncate cursor-text"
-            onDoubleClick={handleDoubleClick}
-            title={table.name}
-          >
-            {table.name}
-          </span>
-        )}
+        <span
+          className="flex-1 text-sm font-semibold text-white truncate cursor-pointer"
+          onDoubleClick={handleDoubleClick}
+          title={table.name}
+        >
+          {table.name}
+        </span>
 
         {/* Review badge */}
         <ReviewIndicator reviewState={table.reviewState} className="shrink-0 text-white" />
