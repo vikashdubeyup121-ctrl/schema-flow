@@ -273,27 +273,56 @@ export function DashboardWidget(): ReactNode {
           />
         )}
 
-        {/* Project grid */}
+        {/* Project grids */}
         {!isLoading && !isError && projects.length > 0 && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  diagramCount={project.diagramCount}
-                  isSelected={selectedProjectId === project.id}
-                  onSelect={() => handleSelectProject(project.id)}
-                  onRename={(name) => update.mutate({ id: project.id, name })}
-                  onDelete={() => setProjectToDelete(project.id)}
-                  onShare={() => setShareProject({ id: project.id, name: project.name, ownerId: project.ownerId })}
-                />
-              ))}
-            </div>
+          <div className="flex flex-col gap-10">
+            {/* My Projects */}
+            {projects.filter(p => p.ownerId === user?.id).length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-4">My Projects</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {projects.filter(p => p.ownerId === user?.id).map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      diagramCount={project.diagramCount}
+                      isSelected={selectedProjectId === project.id}
+                      isOwner={true}
+                      onSelect={() => handleSelectProject(project.id)}
+                      onRename={(name) => update.mutate({ id: project.id, name })}
+                      onDelete={() => setProjectToDelete(project.id)}
+                      onShare={() => setShareProject({ id: project.id, name: project.name, ownerId: project.ownerId })}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Shared with me */}
+            {projects.filter(p => p.ownerId !== user?.id).length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-4">Shared with me</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {projects.filter(p => p.ownerId !== user?.id).map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      diagramCount={project.diagramCount}
+                      isSelected={selectedProjectId === project.id}
+                      isOwner={false}
+                      onSelect={() => handleSelectProject(project.id)}
+                      onRename={(name) => update.mutate({ id: project.id, name })}
+                      onDelete={() => setProjectToDelete(project.id)}
+                      onShare={() => setShareProject({ id: project.id, name: project.name, ownerId: project.ownerId })}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Expanded project — diagram section */}
             {selectedProjectId && (
-              <section className="border border-border rounded-xl overflow-hidden">
+              <section className="border border-border rounded-xl overflow-hidden mt-4">
                 <div className="flex items-center justify-between px-5 py-3 bg-surface border-b border-border">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     {selectedProjectId ? (

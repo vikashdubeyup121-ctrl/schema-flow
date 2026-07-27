@@ -7,6 +7,7 @@ interface ProjectCardProps {
   project: Project;
   diagramCount: number;
   isSelected: boolean;
+  isOwner: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
@@ -17,6 +18,7 @@ export function ProjectCard({
   project,
   diagramCount,
   isSelected,
+  isOwner,
   onSelect,
   onRename,
   onDelete,
@@ -116,13 +118,17 @@ export function ProjectCard({
               </button>
               <button
                 type="button"
+                disabled={!isOwner}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setMenuOpen(false);
                   onDelete();
                 }}
-                className="w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 transition-colors"
+                className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-sm transition-colors ${
+                  isOwner ? 'text-danger hover:bg-danger/10' : 'text-muted-foreground opacity-50 cursor-not-allowed'
+                }`}
+                title={!isOwner ? 'Only the project owner can delete this project' : undefined}
               >
                 <DeleteIcon size={14} />
                 Delete
