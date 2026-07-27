@@ -13,6 +13,7 @@ interface UseEditorSyncOptions {
   publishedDslText?: string | null;
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
+  onSync?: (nodes: Node[], edges: Edge[]) => void;
   enabled?: boolean;
   onDirty?: () => void;
 }
@@ -51,6 +52,7 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
           const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges, publishedAst);
           optionsRef.current.onNodesChange(newNodes);
           optionsRef.current.onEdgesChange(newEdges);
+          if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
         } finally {
           isSyncingFromEditorRef.current = false;
         }
@@ -87,6 +89,7 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
       const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst);
       optionsRef.current.onNodesChange(newNodes);
       optionsRef.current.onEdgesChange(newEdges);
+      if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
     } finally {
       isSyncingFromEditorRef.current = false;
     }

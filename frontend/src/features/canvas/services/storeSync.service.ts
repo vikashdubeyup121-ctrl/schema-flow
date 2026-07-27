@@ -183,4 +183,33 @@ export function syncNodesToFeatureStores(nodes: Node[], edges: Edge[]): void {
       }
     }
   }
+
+  // Cleanup: Remove items from stores that no longer exist in the AST/nodes
+  const tableIds = new Set(
+    nodes.filter(n => n.type === 'table').map(n => (n.data as unknown as TableNodeData).tableId)
+  );
+  for (const id of Object.keys(tableStore.tables)) {
+    if (!tableIds.has(id)) tableStore.removeTable(id);
+  }
+
+  const columnIds = new Set(
+    nodes.flatMap(n => n.type === 'table' ? (n.data as unknown as TableNodeData).columns.map(c => c.id) : [])
+  );
+  for (const id of Object.keys(columnStore.columns)) {
+    if (!columnIds.has(id)) columnStore.removeColumn(id);
+  }
+
+  const noteIds = new Set(
+    nodes.filter(n => n.type === 'note').map(n => (n.data as unknown as NoteNodeData).noteId)
+  );
+  for (const id of Object.keys(noteStore.notes)) {
+    if (!noteIds.has(id)) noteStore.removeNote(id);
+  }
+
+  const relIds = new Set(
+    edges.filter(e => e.type === 'relationship').map(e => (e.data as unknown as RelationshipEdgeData).relationshipId)
+  );
+  for (const id of Object.keys(relStore.relationships)) {
+    if (!relIds.has(id)) relStore.removeRelationship(id);
+  }
 }

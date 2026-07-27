@@ -130,11 +130,12 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     publishedDslText: diagram?.publishedDslText ?? null,
     onNodesChange: (newNodes) => {
       setNodes(newNodes);
-      syncNodesToFeatureStores(newNodes, edges);
     },
     onEdgesChange: (newEdges) => {
       setEdges(newEdges);
-      syncNodesToFeatureStores(nodes, newEdges);
+    },
+    onSync: (newNodes, newEdges) => {
+      syncNodesToFeatureStores(newNodes, newEdges);
     },
     enabled: hasInitialized, // Always enable sync after init to load nodes!
     onDirty: () => setIsDirty(true),

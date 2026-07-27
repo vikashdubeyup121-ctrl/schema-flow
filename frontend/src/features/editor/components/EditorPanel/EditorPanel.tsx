@@ -79,6 +79,9 @@ const dslLanguage = StreamLanguage.define<{}>({
     if (stream.match(/^`[^`]*`/)) return 'string';
     stream.next();
     return null;
+  },
+  languageData: {
+    commentTokens: { line: '// ' }
   }
 });
 
