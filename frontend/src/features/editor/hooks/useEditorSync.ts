@@ -53,6 +53,10 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
           optionsRef.current.onNodesChange(newNodes);
           optionsRef.current.onEdgesChange(newEdges);
           if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
+        } catch (e: any) {
+          import('@/shared/stores/toast.store').then(m => {
+            m.Toast.error(e.message || 'Failed to parse schema');
+          });
         } finally {
           isSyncingFromEditorRef.current = false;
         }
