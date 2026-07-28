@@ -11,5 +11,5 @@ export interface Diagram {
   createdAt: string;
   updatedAt: string;
   updatedBy: string | null;
-  updatedByName?: string;
+  updatedByName?: string | undefined;
 }

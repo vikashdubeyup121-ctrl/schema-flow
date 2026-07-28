@@ -12,7 +12,7 @@ export function ProfilePage(): ReactNode {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">User Profile</h1>
-        <Button variant="outline" onClick={() => navigate('/dashboard')}>
+        <Button variant="secondary" onClick={() => navigate('/dashboard')}>
           Back to Dashboard
         </Button>
       </header>

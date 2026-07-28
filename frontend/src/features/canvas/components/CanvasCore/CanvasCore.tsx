@@ -111,8 +111,7 @@ export const CanvasCore = memo(function CanvasCore({
     (e: AnyMouseEvent) => {
       if (isReadOnly) {
         e.preventDefault();
-        const { Toast } = require('@/shared/stores/toast.store');
-        Toast.warning('You only have view permissions for this diagram.');
+        import('@/shared/stores/toast.store').then(m => m.Toast.warning('You only have view permissions for this diagram.'));
         return;
       }
       openMenu(e, 'canvas');
@@ -124,8 +123,7 @@ export const CanvasCore = memo(function CanvasCore({
     (e: AnyMouseEvent, node: Node) => {
       if (isReadOnly) {
         e.preventDefault();
-        const { Toast } = require('@/shared/stores/toast.store');
-        Toast.warning('You only have view permissions for this diagram.');
+        import('@/shared/stores/toast.store').then(m => m.Toast.warning('You only have view permissions for this diagram.'));
         return;
       }
       const data = node.data as unknown as TableNodeData;
@@ -139,11 +137,10 @@ export const CanvasCore = memo(function CanvasCore({
   );
 
   const handleNodeDoubleClick = useCallback(
-    (e: AnyMouseEvent, node: Node) => {
+    (e: AnyMouseEvent, _node: Node) => {
       if (isReadOnly) {
         e.preventDefault();
-        const { Toast } = require('@/shared/stores/toast.store');
-        Toast.warning('You only have view permissions for this diagram.');
+        import('@/shared/stores/toast.store').then(m => m.Toast.warning('You only have view permissions for this diagram.'));
       }
     },
     [isReadOnly]

@@ -28,5 +28,5 @@ export interface CreateDiagramRequest {
 export interface UpdateDiagramRequest {
   name?: string | undefined;
   dslText?: string | undefined;
-  nodesData?: any;
+  nodesData?: Record<string, {x: number, y: number}> | undefined;
 }

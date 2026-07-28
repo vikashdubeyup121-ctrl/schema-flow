@@ -39,14 +39,36 @@ function createApiClient(): AxiosInstance {
       }
       return response;
     },
-    (error) => {
-      const parsed = parseApiError(error);
-
-      if (parsed.status === 401) {
-        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        onForceLogout?.();
+    async (error) => {
+      const originalRequest = error.config;
+      
+      // Avoid intercepting refresh or logout requests to prevent infinite loops
+      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/auth/logout')) {
+        return Promise.reject(parseApiError(error));
       }
 
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          // Attempt to refresh
+          const refreshRes = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {}, {
+            withCredentials: true
+          });
+          const newAccessToken = refreshRes.data.data.accessToken;
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, newAccessToken);
+          
+          if (originalRequest.headers) {
+            originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          }
+          return client(originalRequest);
+        } catch (refreshError) {
+          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+          onForceLogout?.();
+          return Promise.reject(parseApiError(refreshError as any));
+        }
+      }
+
+      const parsed = parseApiError(error);
       return Promise.reject(parsed);
     },
   );

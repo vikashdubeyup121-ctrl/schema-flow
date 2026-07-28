@@ -15,7 +15,7 @@ function parseConstraintBlock(raw: string): Partial<DslColumn> {
   let constraintStr = raw;
   const noteMatch = /note:\s*(?:"([^"]+)"|'([^']+)')/i.exec(constraintStr);
   if (noteMatch) {
-    result.note = noteMatch[1] || noteMatch[2];
+    result.note = noteMatch[1] || noteMatch[2] || null;
     constraintStr = constraintStr.replace(noteMatch[0], '');
   }
 
@@ -47,11 +47,11 @@ function parseConstraintBlock(raw: string): Partial<DslColumn> {
       const fullMatch = /^\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\s*([><-])\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)/.exec(refPart);
       if (fullMatch) {
         result.inlineFullRef = {
-          fromTable: fullMatch[1],
-          fromColumn: fullMatch[2],
-          type: fullMatch[3] as RefType,
-          toTable: fullMatch[4],
-          toColumn: fullMatch[5],
+          fromTable: fullMatch[1] ?? '',
+          fromColumn: fullMatch[2] ?? '',
+          type: (fullMatch[3] ?? '-') as RefType,
+          toTable: fullMatch[4] ?? '',
+          toColumn: fullMatch[5] ?? '',
         };
       }
     }

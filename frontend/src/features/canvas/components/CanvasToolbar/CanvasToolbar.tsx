@@ -32,7 +32,7 @@ interface CanvasToolbarProps {
 
 interface ToolButtonProps {
   label: string;
-  active?: boolean;
+  active?: boolean | undefined;
   onClick: () => void;
   children: ReactNode;
 }
