@@ -129,6 +129,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     nodes,
     edges,
     publishedDslText: diagram?.publishedDslText ?? null,
+    nodesData: diagram?.nodesData,
     onNodesChange: (newNodes) => {
       setNodes(newNodes);
     },
@@ -186,13 +187,18 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const { status: autosaveStatus, lastSavedAt, flush } = useCanvasAutosave({
     isDirty: isDirty && !isReadOnly,
     onSave: async () => {
-      console.log('Explicit Save triggered! diagram:', !!diagram, 'isReadOnly:', isReadOnly, 'dslText length:', dslText.length);
       if (diagram && !isReadOnly) {
-        console.log('Calling updateDiagram API...');
-        await updateDiagram(diagramId, undefined, diagram.projectId, dslText);
-        console.log('updateDiagram API call finished!');
-      } else {
-        console.log('Skipped API call. Diagram exists:', !!diagram, 'isReadOnly:', isReadOnly);
+        const nodesData: Record<string, {x: number, y: number}> = {};
+        nodes.forEach((n) => {
+          if (n.type === 'table' || n.type === 'note') {
+            const data = n.data as any;
+            const key = n.type === 'table' ? data.name : data.noteId;
+            if (key) {
+              nodesData[key] = { x: Math.round(n.position.x), y: Math.round(n.position.y) };
+            }
+          }
+        });
+        await updateDiagram(diagramId, undefined, diagram.projectId, dslText, nodesData);
       }
       setIsDirty(false);
     },
@@ -438,7 +444,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
 
   const handleAutoLayout = useCallback(async (direction: string) => {
     const { getLayoutedElements } = await import('@/features/canvas/services/layout.service');
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction as any);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = await getLayoutedElements(nodes, edges, direction as any);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
     syncCanvasToEditor(layoutedNodes, layoutedEdges);

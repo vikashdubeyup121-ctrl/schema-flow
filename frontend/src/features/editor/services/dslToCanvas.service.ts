@@ -85,7 +85,8 @@ export function dslAstToCanvasNodes(
   ast: DslAst,
   existingNodes: Node[],
   existingEdges: Edge[],
-  publishedAst?: DslAst
+  publishedAst?: DslAst,
+  nodesData?: any
 ): { nodes: Node[]; edges: Edge[] } {
   const tablesWithRels = ast.tables.filter(t => ast.refs.some(r => r.fromTable === t.name || r.toTable === t.name));
   const tablesWithoutRels = ast.tables.filter(t => !ast.refs.some(r => r.fromTable === t.name || r.toTable === t.name));
@@ -128,10 +129,15 @@ export function dslAstToCanvasNodes(
     );
     const rowIndex = index % LAYOUT_ROWS;
     const colIndex = Math.floor(index / LAYOUT_ROWS);
-    const computedPosition = {
+    
+    let computedPosition = {
       x: colIndex * COLUMN_LAYOUT_STEP_X + 80,
       y: rowY[rowIndex],
     };
+    if (nodesData?.[table.name]) {
+      computedPosition = { x: nodesData[table.name].x, y: nodesData[table.name].y };
+    }
+
     return buildTableNode(table, existing, computedPosition, publishedAst);
   });
 
@@ -139,10 +145,14 @@ export function dslAstToCanvasNodes(
     const existing = existingNodes.find(
       (n) => n.type === 'table' && (n.data as unknown as TableNodeData).name === table.name,
     );
-    const computedPosition = {
+    let computedPosition = {
       x: index * COLUMN_LAYOUT_STEP_X + 80,
       y: isolatedRowY,
     };
+    if (nodesData?.[table.name]) {
+      computedPosition = { x: nodesData[table.name].x, y: nodesData[table.name].y };
+    }
+    
     return buildTableNode(table, existing, computedPosition, publishedAst);
   });
 

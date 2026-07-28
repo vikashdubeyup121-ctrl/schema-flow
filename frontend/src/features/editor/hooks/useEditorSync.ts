@@ -11,6 +11,7 @@ interface UseEditorSyncOptions {
   nodes: Node[];
   edges: Edge[];
   publishedDslText?: string | null;
+  nodesData?: any;
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
   onSync?: (nodes: Node[], edges: Edge[]) => void;
@@ -49,7 +50,7 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
         try {
           const ast = parseDsl(text);
           const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
-          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges, publishedAst);
+          const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges, publishedAst, optionsRef.current.nodesData);
           optionsRef.current.onNodesChange(newNodes);
           optionsRef.current.onEdgesChange(newEdges);
           if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
@@ -90,7 +91,7 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
       const currentDsl = useEditorStore.getState().dslText;
       const ast = parseDsl(currentDsl);
       const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
-      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst);
+      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst, optionsRef.current.nodesData);
       optionsRef.current.onNodesChange(newNodes);
       optionsRef.current.onEdgesChange(newEdges);
       if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
