@@ -499,7 +499,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
                 await publishDiagram(diagramId, diagram!.projectId);
                 Toast.success('Diagram published successfully');
                 queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
-                window.location.reload();
+                queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
               } catch (error: any) {
                 Toast.error('Failed to publish diagram');
               }

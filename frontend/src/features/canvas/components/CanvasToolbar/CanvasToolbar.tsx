@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { useCanvasInteractionStore } from '../../stores/canvasInteraction.store';
 import {
   MoveIcon,
@@ -56,6 +56,62 @@ function ToolButton({ label, active = false, onClick, children }: ToolButtonProp
 
 function Divider(): ReactNode {
   return <div className="w-px h-5 bg-border mx-1" />;
+}
+
+function AutoLayoutDropdown({ onSelect }: { onSelect: (val: string) => void }): ReactNode {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selected, setSelected] = useState('');
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
+  }, []);
+
+  const handleSelect = (val: string, label: string) => {
+    setSelected(label);
+    setIsOpen(false);
+    onSelect(val);
+  };
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center mx-1 gap-1 border border-border rounded-md px-2 bg-surface-hover hover:bg-surface focus:outline-none focus:ring-1 focus:ring-primary h-8 transition-colors text-xs font-medium text-foreground"
+        title="Auto Layout Algorithm"
+      >
+        <AutoLayoutIcon size={14} className="text-muted-foreground" />
+        <span>{selected || "Auto Layout..."}</span>
+        <ChevronDownIcon size={14} className="text-muted-foreground" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-44 bg-card border border-border rounded-md shadow-lg py-1 z-50 text-xs text-foreground font-medium">
+          <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dagre</div>
+          <button onClick={() => handleSelect('dagre-LR', 'Dagre (L→R)')} className="w-full text-left px-3 py-1.5 hover:bg-surface-hover text-foreground flex items-center justify-between">
+            Left to Right {selected === 'Dagre (L→R)' && <span className="text-primary">✓</span>}
+          </button>
+          <button onClick={() => handleSelect('dagre-TB', 'Dagre (T→B)')} className="w-full text-left px-3 py-1.5 hover:bg-surface-hover text-foreground flex items-center justify-between">
+            Top to Bottom {selected === 'Dagre (T→B)' && <span className="text-primary">✓</span>}
+          </button>
+          <div className="border-t border-border my-1" />
+          <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ELK</div>
+          <button onClick={() => handleSelect('elk-LR', 'ELK (L→R)')} className="w-full text-left px-3 py-1.5 hover:bg-surface-hover text-foreground flex items-center justify-between">
+            Left to Right {selected === 'ELK (L→R)' && <span className="text-primary">✓</span>}
+          </button>
+          <button onClick={() => handleSelect('elk-TB', 'ELK (T→B)')} className="w-full text-left px-3 py-1.5 hover:bg-surface-hover text-foreground flex items-center justify-between">
+            Top to Bottom {selected === 'ELK (T→B)' && <span className="text-primary">✓</span>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function CanvasToolbar({
@@ -116,30 +172,7 @@ export function CanvasToolbar({
       <Divider />
 
       {onAutoLayout && (
-        <div className="flex items-center mx-1 gap-1 border border-border rounded-md px-1 bg-surface-hover focus-within:ring-1 focus-within:ring-primary h-8">
-          <AutoLayoutIcon size={14} className="text-muted-foreground ml-1" />
-          <select 
-            className="bg-transparent text-xs text-foreground font-medium outline-none appearance-none cursor-pointer pl-1 pr-2"
-            title="Auto Layout Algorithm"
-            onChange={(e) => {
-              if (e.target.value) {
-                onAutoLayout(e.target.value);
-                e.target.value = ""; // Reset after selection so it acts like a button
-              }
-            }}
-          >
-            <option value="" disabled selected>Auto Layout...</option>
-            <optgroup label="Dagre">
-              <option value="dagre-LR">Left to Right</option>
-              <option value="dagre-TB">Top to Bottom</option>
-            </optgroup>
-            <optgroup label="ELK">
-              <option value="elk-LR">Left to Right</option>
-              <option value="elk-TB">Top to Bottom</option>
-            </optgroup>
-          </select>
-          <ChevronDownIcon size={14} className="text-muted-foreground pointer-events-none -ml-2 mr-1" />
-        </div>
+        <AutoLayoutDropdown onSelect={onAutoLayout} />
       )}
 
       <Divider />
