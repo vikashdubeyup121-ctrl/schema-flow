@@ -436,9 +436,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     fitView({ duration: 300 });
   }, [fitView]);
 
-  const handleAutoLayout = useCallback(async () => {
+  const handleAutoLayout = useCallback(async (direction: string) => {
     const { getLayoutedElements } = await import('@/features/canvas/services/layout.service');
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction as any);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
     syncCanvasToEditor(layoutedNodes, layoutedEdges);

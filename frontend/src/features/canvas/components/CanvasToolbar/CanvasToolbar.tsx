@@ -10,6 +10,7 @@ import {
   SidebarIcon,
   EyeIcon,
   EyeOffIcon,
+  AutoLayoutIcon,
 } from '@/shared/icons';
 
 interface CanvasToolbarProps {
@@ -23,7 +24,7 @@ interface CanvasToolbarProps {
   onPublish?: (() => void) | undefined;
   onShare?: (() => void) | undefined;
   onSave?: (() => void) | undefined;
-  onAutoLayout?: (() => void) | undefined;
+  onAutoLayout?: ((direction: string) => void) | undefined;
   showOnlyChanges?: boolean;
   onToggleShowChanges?: () => void;
 }
@@ -114,9 +115,24 @@ export function CanvasToolbar({
       <Divider />
 
       {onAutoLayout && (
-        <ToolButton label="Auto Layout" onClick={onAutoLayout}>
-          <AutoLayoutIcon size={16} />
-        </ToolButton>
+        <div className="flex items-center mx-1 gap-1 border border-border rounded-md px-1 bg-surface-hover focus-within:ring-1 focus-within:ring-primary h-8">
+          <AutoLayoutIcon size={14} className="text-muted-foreground ml-1" />
+          <select 
+            className="bg-transparent text-xs text-foreground font-medium outline-none appearance-none cursor-pointer pl-1 pr-2"
+            title="Auto Layout Algorithm"
+            onChange={(e) => {
+              if (e.target.value) {
+                onAutoLayout(e.target.value);
+                e.target.value = ""; // Reset after selection so it acts like a button
+              }
+            }}
+          >
+            <option value="" disabled selected>Auto Layout...</option>
+            <option value="LR">Dagre (Left to Right)</option>
+            <option value="TB">Dagre (Top to Bottom)</option>
+          </select>
+          <ChevronDownIcon size={14} className="text-muted-foreground pointer-events-none -ml-2 mr-1" />
+        </div>
       )}
 
       <Divider />
