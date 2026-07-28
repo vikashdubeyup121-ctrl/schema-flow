@@ -59,7 +59,7 @@ function createApiClient(): AxiosInstance {
         } catch (refreshError) {
           localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           onForceLogout?.();
-          return Promise.reject(parseApiError(refreshError));
+          return Promise.reject(parseApiError(refreshError as any));
         }
       }
 

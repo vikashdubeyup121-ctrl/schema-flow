@@ -275,8 +275,7 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
             // Ignore navigation keys
             const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', 'Tab', 'Escape'];
             if (!navKeys.includes(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-              const { Toast } = require('@/shared/stores/toast.store');
-              Toast.warning('You only have view permissions for this diagram.');
+              import('@/shared/stores/toast.store').then(m => m.Toast.warning('You only have view permissions for this diagram.'));
             }
           }
         }}
