@@ -11,6 +11,7 @@ import {
   EyeIcon,
   EyeOffIcon,
   AutoLayoutIcon,
+  ChevronDownIcon,
 } from '@/shared/icons';
 
 interface CanvasToolbarProps {
@@ -128,8 +129,14 @@ export function CanvasToolbar({
             }}
           >
             <option value="" disabled selected>Auto Layout...</option>
-            <option value="LR">Dagre (Left to Right)</option>
-            <option value="TB">Dagre (Top to Bottom)</option>
+            <optgroup label="Dagre">
+              <option value="dagre-LR">Left to Right</option>
+              <option value="dagre-TB">Top to Bottom</option>
+            </optgroup>
+            <optgroup label="ELK">
+              <option value="elk-LR">Left to Right</option>
+              <option value="elk-TB">Top to Bottom</option>
+            </optgroup>
           </select>
           <ChevronDownIcon size={14} className="text-muted-foreground pointer-events-none -ml-2 mr-1" />
         </div>
