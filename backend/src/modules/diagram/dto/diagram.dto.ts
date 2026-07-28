@@ -9,7 +9,7 @@ export const UpdateDiagramSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100).optional(),
   description: z.string().max(500).optional(),
   dslText: z.string().optional(),
-  nodesData: z.record(z.any()).optional(),
+  nodesData: z.record(z.string(), z.any()).optional(),
 });
 
 export const ViewportSchema = z.object({
