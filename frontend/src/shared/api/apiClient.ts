@@ -42,6 +42,11 @@ function createApiClient(): AxiosInstance {
     async (error) => {
       const originalRequest = error.config;
       
+      // Avoid intercepting refresh or logout requests to prevent infinite loops
+      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/auth/logout')) {
+        return Promise.reject(parseApiError(error));
+      }
+
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         try {

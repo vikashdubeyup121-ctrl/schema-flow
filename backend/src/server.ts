@@ -24,6 +24,9 @@ const start = async () => {
   new CollaborationGateway(app.server, roomService, presenceService, operationService);
 
   try {
+    await prisma.$connect();
+    app.log.info('Connected to the database successfully');
+    
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`Server is listening on http://${config.host}:${config.port}`);
   } catch (err) {
