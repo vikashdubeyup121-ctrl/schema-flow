@@ -194,8 +194,9 @@ export const CanvasCore = memo(function CanvasCore({
       maxZoom={CANVAS.MAX_ZOOM}
       defaultViewport={{ x: 0, y: 0, zoom: CANVAS.DEFAULT_ZOOM }}
       panOnScroll
-      panOnDrag={activeTool === 'hand' ? true : [1, 2]}
-      selectionOnDrag={activeTool === 'pointer'}
+      panOnDrag={activeTool === 'hand' || activeTool === 'pointer' ? true : [1, 2]}
+      selectionOnDrag={false}
+      selectionKeyCode="Shift"
       selectNodesOnDrag={false}
       panActivationKeyCode="Space"
       nodesDraggable={nodesDraggable}

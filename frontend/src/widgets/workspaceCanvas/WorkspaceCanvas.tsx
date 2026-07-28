@@ -522,9 +522,14 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           className="absolute top-3 right-3 flex flex-col items-end gap-0.5 bg-card/80 backdrop-blur border border-border px-3 py-1.5 rounded-lg shadow-sm pointer-events-none"
           style={{ zIndex: 10 }}
         >
-          <span className="text-xs text-foreground font-medium truncate max-w-[200px]" title={diagram.name}>
-            {diagram.name}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-foreground font-medium truncate max-w-[200px]" title={diagram.name}>
+              {diagram.name}
+            </span>
+            <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded uppercase tracking-wide">
+              {diagram.versionTag}
+            </span>
+          </div>
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             {diagram.updatedByName && <span>By {diagram.updatedByName}</span>}
             <span>•</span>

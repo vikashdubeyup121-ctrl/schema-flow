@@ -9,6 +9,8 @@ export function mapDiagramResponseToDiagram(dto: DiagramResponse): Diagram {
     description: dto.description || undefined,
     dslText: dto.dslText,
     publishedDslText: dto.publishedDslText,
+    versionTag: dto.versionTag || 'Draft',
+    viewport: dto.viewport || { x: 0, y: 0, zoom: 1 },
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     updatedBy: dto.updatedBy,

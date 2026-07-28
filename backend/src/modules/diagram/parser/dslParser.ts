@@ -11,24 +11,40 @@ const COMMENT_RE = /^\s*\/\//;
 
 function parseConstraintBlock(raw: string): Partial<DslColumn> {
   const result: Partial<DslColumn> = {};
-  const parts = raw.split(',').map((p) => p.trim().toLowerCase());
+  const parts = raw.split(',').map((p) => p.trim());
 
   for (const part of parts) {
-    if (part === 'pk' || part === 'primary key') {
+    if (!part) continue;
+    const lowerPart = part.toLowerCase();
+    
+    if (lowerPart === 'pk' || lowerPart === 'primary key') {
       result.primaryKey = true;
       result.notNull = true;
-    } else if (part === 'not null') {
+    } else if (lowerPart === 'not null') {
       result.notNull = true;
-    } else if (part === 'unique') {
+    } else if (lowerPart === 'unique') {
       result.unique = true;
-    } else if (part.startsWith('default:')) {
-      result.defaultValue = part.replace('default:', '').trim().replace(/^`|`$/g, '');
-    } else if (part.startsWith('ref:')) {
-      const refPart = part.slice(4).trim();
-      const refMatch = /^([><-])\s*(\w+)\.(\w+)/.exec(refPart);
-      if (refMatch) {
-        result.refType = refMatch[1] as RefType;
-        result.refTarget = `${refMatch[2]}.${refMatch[3]}`;
+    } else if (lowerPart.startsWith('default:')) {
+      result.defaultValue = part.substring(8).trim().replace(/^`|`$/g, '');
+    } else if (lowerPart.startsWith('ref:')) {
+      const refPart = part.substring(4).trim();
+      
+      const shortMatch = /^([><-])\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)/.exec(refPart);
+      if (shortMatch) {
+        result.refType = shortMatch[1] as RefType;
+        result.refTarget = `${shortMatch[2]}.${shortMatch[3]}`;
+        continue;
+      }
+
+      const fullMatch = /^\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\s*([><-])\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)/.exec(refPart);
+      if (fullMatch) {
+        result.inlineFullRef = {
+          fromTable: fullMatch[1],
+          fromColumn: fullMatch[2],
+          type: fullMatch[3] as RefType,
+          toTable: fullMatch[4],
+          toColumn: fullMatch[5],
+        };
       }
     }
   }
@@ -61,6 +77,7 @@ function parseColumnLine(line: string): DslColumn | null {
     defaultValue: constraints.defaultValue ?? null,
     refTarget: constraints.refTarget ?? null,
     refType: constraints.refType ?? null,
+    inlineFullRef: constraints.inlineFullRef ?? null,
   };
 }
 
@@ -148,6 +165,19 @@ export function parseDsl(dsl: string): DslAst {
               type: col.refType,
             });
           }
+        }
+      }
+      if (col.inlineFullRef) {
+        const r = col.inlineFullRef;
+        const alreadyExists = refs.some(
+          (ex) =>
+            ex.fromTable === r.fromTable &&
+            ex.fromColumn === r.fromColumn &&
+            ex.toTable === r.toTable &&
+            ex.toColumn === r.toColumn
+        );
+        if (!alreadyExists) {
+          refs.push(r);
         }
       }
     }

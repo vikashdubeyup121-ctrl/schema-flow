@@ -3,8 +3,9 @@ export interface Diagram {
   projectId: string;
   name: string;
   description?: string | undefined;
-  dslText?: string | null | undefined;
-  publishedDslText?: string | null | undefined;
+  dslText: string | null;
+  publishedDslText: string | null;
+  versionTag: string;
   viewport: { x: number; y: number; zoom: number };
   createdAt: string;
   updatedAt: string;

@@ -48,17 +48,23 @@ export class DiagramRepository {
     });
   }
 
-  async findById(id: string): Promise<Diagram | null> {
+  async findById(id: string): Promise<any | null> {
     return this.prisma.diagram.findFirst({
       where: { id, deletedAt: null },
-      include: { updatedByUser: { select: { name: true } } },
+      include: { 
+        updatedByUser: { select: { name: true } },
+        versions: true 
+      },
     });
   }
 
   async findByProject(projectId: string): Promise<any[]> {
     return this.prisma.diagram.findMany({
       where: { projectId, deletedAt: null },
-      include: { updatedByUser: { select: { name: true } } },
+      include: { 
+        updatedByUser: { select: { name: true } },
+        versions: true
+      },
       orderBy: { updatedAt: 'desc' },
     });
   }
@@ -68,7 +74,10 @@ export class DiagramRepository {
       const diagram = await tx.diagram.update({
         where: { id },
         data,
-        include: { updatedByUser: { select: { name: true } } },
+        include: { 
+          updatedByUser: { select: { name: true } },
+          versions: true 
+        },
       });
 
       if (data.dslText && diagram.activeDraftVersionId) {

@@ -119,7 +119,12 @@ export function DiagramCard({ diagram, onOpen, onRename, onDelete }: DiagramCard
         />
       ) : (
         <div>
-          <p className="text-sm font-medium text-foreground truncate">{diagram.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-foreground truncate">{diagram.name}</p>
+            <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded uppercase tracking-wide">
+              {diagram.versionTag}
+            </span>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Updated {formatDate(diagram.updatedAt)}
           </p>

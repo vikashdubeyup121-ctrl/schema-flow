@@ -7,6 +7,7 @@ export interface DiagramResponse {
   activeDraftVersionId: string | null;
   dslText: string | null;
   publishedDslText: string | null;
+  versionTag: string;
   viewport: {
     x: number;
     y: number;

@@ -4,7 +4,8 @@ import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { StreamLanguage } from '@codemirror/language';
-
+import { keymap } from '@codemirror/view';
+import { indentWithTab } from '@codemirror/commands';
 // ─── Simple DSL Linter ─────────────────────────────────────────────────────────
 
 const dslLinter = linter((view) => {
@@ -128,7 +129,6 @@ const appTheme = EditorView.theme({
   },
 });
 
-import { keymap } from '@codemirror/view';
 
 interface EditorPanelProps {
   value: string;
@@ -158,6 +158,7 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
         dslLanguage,
         EditorState.readOnly.of(isReadOnly),
         keymap.of([
+          indentWithTab,
           {
             key: "Mod-s",
             run: () => {
