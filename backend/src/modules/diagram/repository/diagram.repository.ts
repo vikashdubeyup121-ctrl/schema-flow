@@ -69,7 +69,7 @@ export class DiagramRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; dslText?: string; updatedBy?: string }): Promise<any> {
+  async update(id: string, data: { name?: string; description?: string; dslText?: string; nodesData?: any; updatedBy?: string }): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
       const diagram = await tx.diagram.update({
         where: { id },
@@ -125,6 +125,8 @@ export class DiagramRepository {
               lineageId: tableId,
               name: table.name,
               color: '#4f46e5', // default color or compute from name
+              x: data.nodesData?.[table.name]?.x ?? 0,
+              y: data.nodesData?.[table.name]?.y ?? 0,
               columns: {
                 create: columnsData,
               },

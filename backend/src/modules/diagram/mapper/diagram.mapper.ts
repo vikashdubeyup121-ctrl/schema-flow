@@ -10,6 +10,7 @@ export interface DiagramResponse {
   dslText: string | null;
   publishedDslText: string | null;
   versionTag: string;
+  nodesData?: any;
   viewport: {
     x: number;
     y: number;
@@ -55,6 +56,7 @@ export class DiagramMapper {
       dslText: diagram.dslText,
       publishedDslText: diagram.publishedDslText,
       versionTag,
+      nodesData: diagram.nodesData,
       viewport: {
         x: diagram.viewportX,
         y: diagram.viewportY,

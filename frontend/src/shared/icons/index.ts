@@ -50,6 +50,7 @@ import {
   Layers,
   Share2,
   GitBranch,
+  Wand2,
   type LucideProps,
 } from 'lucide-react';
 
@@ -107,4 +108,5 @@ export {
   Share2 as ShareIcon,
   GitBranch as BranchIcon,
   PanelLeft as SidebarIcon,
+  Wand2 as AutoLayoutIcon,
 };

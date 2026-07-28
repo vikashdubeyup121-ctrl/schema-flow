@@ -6,6 +6,7 @@ export interface Diagram {
   dslText: string | null;
   publishedDslText: string | null;
   versionTag: string;
+  nodesData?: any;
   viewport: { x: number; y: number; zoom: number };
   createdAt: string;
   updatedAt: string;

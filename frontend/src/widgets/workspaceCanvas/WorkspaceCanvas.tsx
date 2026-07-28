@@ -129,6 +129,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     nodes,
     edges,
     publishedDslText: diagram?.publishedDslText ?? null,
+    nodesData: diagram?.nodesData,
     onNodesChange: (newNodes) => {
       setNodes(newNodes);
     },
@@ -186,13 +187,18 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const { status: autosaveStatus, lastSavedAt, flush } = useCanvasAutosave({
     isDirty: isDirty && !isReadOnly,
     onSave: async () => {
-      console.log('Explicit Save triggered! diagram:', !!diagram, 'isReadOnly:', isReadOnly, 'dslText length:', dslText.length);
       if (diagram && !isReadOnly) {
-        console.log('Calling updateDiagram API...');
-        await updateDiagram(diagramId, undefined, diagram.projectId, dslText);
-        console.log('updateDiagram API call finished!');
-      } else {
-        console.log('Skipped API call. Diagram exists:', !!diagram, 'isReadOnly:', isReadOnly);
+        const nodesData: Record<string, {x: number, y: number}> = {};
+        nodes.forEach((n) => {
+          if (n.type === 'table' || n.type === 'note') {
+            const data = n.data as any;
+            const key = n.type === 'table' ? data.name : data.noteId;
+            if (key) {
+              nodesData[key] = { x: Math.round(n.position.x), y: Math.round(n.position.y) };
+            }
+          }
+        });
+        await updateDiagram(diagramId, undefined, diagram.projectId, dslText, nodesData);
       }
       setIsDirty(false);
     },
@@ -436,6 +442,19 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     fitView({ duration: 300 });
   }, [fitView]);
 
+  const handleAutoLayout = useCallback(async (direction: string) => {
+    const { getLayoutedElements } = await import('@/features/canvas/services/layout.service');
+    const { nodes: layoutedNodes, edges: layoutedEdges } = await getLayoutedElements(nodes, edges, direction as any);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    syncCanvasToEditor(layoutedNodes, layoutedEdges);
+    syncNodesToFeatureStores(layoutedNodes, layoutedEdges);
+    setIsDirty(true);
+    setTimeout(() => {
+      fitView({ duration: 800, padding: 0.2 });
+    }, 50);
+  }, [nodes, edges, fitView, syncCanvasToEditor]);
+
   const tableCount = nodes.filter((n) => n.type === 'table').length;
 
   if (isDataLoading || !hasInitialized) {
@@ -480,11 +499,12 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
                 await publishDiagram(diagramId, diagram!.projectId);
                 Toast.success('Diagram published successfully');
                 queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
-                window.location.reload();
+                queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
               } catch (error: any) {
                 Toast.error('Failed to publish diagram');
               }
             },
+            onAutoLayout: handleAutoLayout,
           })}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
