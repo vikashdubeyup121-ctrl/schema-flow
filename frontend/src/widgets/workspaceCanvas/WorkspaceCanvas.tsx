@@ -436,6 +436,19 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     fitView({ duration: 300 });
   }, [fitView]);
 
+  const handleAutoLayout = useCallback(async () => {
+    const { getLayoutedElements } = await import('@/features/canvas/services/layout.service');
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    syncCanvasToEditor(layoutedNodes, layoutedEdges);
+    syncNodesToFeatureStores(layoutedNodes, layoutedEdges);
+    setIsDirty(true);
+    setTimeout(() => {
+      fitView({ duration: 800, padding: 0.2 });
+    }, 50);
+  }, [nodes, edges, fitView, syncCanvasToEditor]);
+
   const tableCount = nodes.filter((n) => n.type === 'table').length;
 
   if (isDataLoading || !hasInitialized) {
@@ -485,6 +498,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
                 Toast.error('Failed to publish diagram');
               }
             },
+            onAutoLayout: handleAutoLayout,
           })}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}

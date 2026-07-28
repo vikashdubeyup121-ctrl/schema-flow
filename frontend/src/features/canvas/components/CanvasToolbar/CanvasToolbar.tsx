@@ -23,6 +23,7 @@ interface CanvasToolbarProps {
   onPublish?: (() => void) | undefined;
   onShare?: (() => void) | undefined;
   onSave?: (() => void) | undefined;
+  onAutoLayout?: (() => void) | undefined;
   showOnlyChanges?: boolean;
   onToggleShowChanges?: () => void;
 }
@@ -66,6 +67,7 @@ export function CanvasToolbar({
   onPublish,
   onShare,
   onSave,
+  onAutoLayout,
   showOnlyChanges,
   onToggleShowChanges,
 }: CanvasToolbarProps): ReactNode {
@@ -106,6 +108,14 @@ export function CanvasToolbar({
       {onAddNote && (
         <ToolButton label="Add Note (N)" onClick={onAddNote}>
           <NoteIcon size={16} />
+        </ToolButton>
+      )}
+
+      <Divider />
+
+      {onAutoLayout && (
+        <ToolButton label="Auto Layout" onClick={onAutoLayout}>
+          <AutoLayoutIcon size={16} />
         </ToolButton>
       )}
 
