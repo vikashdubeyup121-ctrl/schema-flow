@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-const DEFAULT_DSL = `// Define your schema below
+export const DEFAULT_DSL = `// Define your schema below
 // Changes sync to the canvas in real time
 
 Table users {

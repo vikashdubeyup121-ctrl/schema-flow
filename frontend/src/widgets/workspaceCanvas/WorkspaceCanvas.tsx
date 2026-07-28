@@ -34,6 +34,7 @@ import type { TableNodeData, NoteNodeData, RelationshipEdgeData } from '@/featur
 import type { RelationshipType } from '@/features/canvas/types/Canvas';
 import type { Point } from '@/shared/types/Geometry';
 import { EditorPanel, useEditorSync, useEditorStore } from '@/features/editor';
+import { DEFAULT_DSL } from '@/features/editor/stores/editor.store';
 import { syncNodesToFeatureStores } from '@/features/canvas/services';
 import { useTableStore } from '@/features/table/stores/table.store';
 import { useColumnStore } from '@/features/column/stores/column.store';
@@ -115,9 +116,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
       if (diagram.dslText) {
         setDslText(diagram.dslText);
       } else {
-        // If it's a completely new diagram, it will just use whatever is in the store 
-        // (which might be the DEFAULT_DSL, or empty). We can leave it as DEFAULT_DSL.
-        // But we MUST mark it dirty so it gets saved to the backend!
+        // If it's a completely new diagram, reset the global store to DEFAULT_DSL
+        // so we don't accidentally inherit the DSL text from the last viewed diagram!
+        setDslText(DEFAULT_DSL);
         setIsDirty(true);
       }
       setHasInitialized(true);
@@ -563,7 +564,7 @@ interface WorkspaceCanvasProps {
 export function WorkspaceCanvas({ diagramId }: WorkspaceCanvasProps): ReactNode {
   return (
     <ReactFlowProvider>
-      <WorkspaceCanvasInner diagramId={diagramId} />
+      <WorkspaceCanvasInner key={diagramId} diagramId={diagramId} />
     </ReactFlowProvider>
   );
 }

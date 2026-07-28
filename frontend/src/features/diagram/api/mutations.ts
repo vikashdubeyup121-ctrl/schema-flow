@@ -38,6 +38,7 @@ export async function updateDiagram(id: string, name: string | undefined, projec
   const body: UpdateDiagramRequest = { name, dslText };
   const response = await apiClient.patch<DiagramResponse>(`/diagrams/${id}`, body);
   const diagram = mapDiagramResponseToDiagram(response.data);
+  queryClient.setQueryData(diagramKeys.detail(id), diagram);
   await queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(projectId) });
   return diagram;
 }

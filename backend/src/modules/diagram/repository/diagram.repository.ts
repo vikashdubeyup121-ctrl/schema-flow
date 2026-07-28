@@ -191,6 +191,11 @@ export class DiagramRepository {
 
       if (!diagram.activeDraftVersionId) return diagram;
 
+      // If the draft code is identical to the published code, there's nothing new to publish.
+      if (diagram.dslText === diagram.publishedDslText) {
+        return diagram;
+      }
+
       // 1. Mark current draft as published
       const publishedVersion = await tx.diagramVersion.update({
         where: { id: diagram.activeDraftVersionId },
