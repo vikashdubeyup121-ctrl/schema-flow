@@ -4,8 +4,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "predev": "prisma generate && prisma db push",
     "dev": "tsx watch src/server.ts",
+    "prebuild": "prisma generate",
     "build": "tsc",
+    "prestart": "prisma generate && prisma db push --accept-data-loss",
     "start": "node dist/server.js"
   },
   "keywords": [],
