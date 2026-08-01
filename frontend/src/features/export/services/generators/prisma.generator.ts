@@ -22,7 +22,6 @@ export class PrismaGenerator implements SchemaGenerator {
       const isOneToOne = ref.type === '-';
       
       const fromModel = this.formatModelName(ref.fromTable);
-      _toModel = this.formatModelName(ref.toTable);
       
       const reverseFieldType = isOneToOne ? fromModel : `${fromModel}[]`;
       // Lowercase first letter for field name
