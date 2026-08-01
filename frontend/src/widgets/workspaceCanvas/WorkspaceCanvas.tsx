@@ -207,7 +207,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     [nodes, isReadOnly],
   );
 
-  const { flush } = useCanvasAutosave({
+  const { status: autosaveStatus, lastSavedAt, flush } = useCanvasAutosave({
     isDirty: isDirty && !isReadOnly,
     onSave: async () => {
       if (diagram && !isReadOnly) {
@@ -701,6 +701,13 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
               </div>
           </div>
         </div>
+
+        {/* Bottom Floating Status Bar */}
+        <CanvasStatusBar
+          nodeCount={nodes.filter(n => n.type === 'table').length}
+          autosaveStatus={autosaveStatus}
+          lastSavedAt={lastSavedAt}
+        />
       </div>
 
       {/* Right: Properties panel */}
