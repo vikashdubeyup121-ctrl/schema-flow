@@ -1,4 +1,4 @@
-import type { DslAst, DslTable, DslColumn, DslRef, RefType } from './DslAst';
+import type { DslAst, DslTable, DslColumn, DslRef, RefType, DslNote } from './DslAst';
 
 // ─── Regex patterns ────────────────────────────────────────────────────────────
 
@@ -11,7 +11,15 @@ const COMMENT_RE = /^\s*\/\//;
 
 function parseConstraintBlock(raw: string): Partial<DslColumn> {
   const result: Partial<DslColumn> = {};
-  const parts = raw.split(',').map((p) => p.trim());
+  
+  let constraintStr = raw;
+  const noteMatch = /note:\s*(?:"([^"]+)"|'([^']+)')/i.exec(constraintStr);
+  if (noteMatch) {
+    result.note = noteMatch[1] || noteMatch[2] || null;
+    constraintStr = constraintStr.replace(noteMatch[0], '');
+  }
+
+  const parts = constraintStr.split(',').map((p) => p.trim());
 
   for (const part of parts) {
     if (!part) continue;
@@ -39,11 +47,11 @@ function parseConstraintBlock(raw: string): Partial<DslColumn> {
       const fullMatch = /^\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\s*([><-])\s*([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)/.exec(refPart);
       if (fullMatch) {
         result.inlineFullRef = {
-          fromTable: fullMatch[1],
-          fromColumn: fullMatch[2],
-          type: fullMatch[3] as RefType,
-          toTable: fullMatch[4],
-          toColumn: fullMatch[5],
+          fromTable: fullMatch[1] ?? '',
+          fromColumn: fullMatch[2] ?? '',
+          type: (fullMatch[3] ?? '-') as RefType,
+          toTable: fullMatch[4] ?? '',
+          toColumn: fullMatch[5] ?? '',
         };
       }
     }
@@ -78,6 +86,7 @@ function parseColumnLine(line: string): DslColumn | null {
     refTarget: constraints.refTarget ?? null,
     refType: constraints.refType ?? null,
     inlineFullRef: constraints.inlineFullRef ?? null,
+    note: constraints.note ?? null,
   };
 }
 
@@ -102,14 +111,39 @@ function parseRefStatement(line: string): DslRef | null {
 // ─── Main parser ───────────────────────────────────────────────────────────────
 
 export function parseDsl(dsl: string): DslAst {
-  const lines = dsl.split('\n');
   const tables: DslTable[] = [];
   const refs: DslRef[] = [];
+  const notes: DslNote[] = [];
+
+  // Extract Notes first to avoid issues with '}' inside multi-line strings
+  const noteRegex = /^\s*[Nn]ote\s+(?:"([^"]+)"|'([^']+)'|(\w+))\s*\{([\s\S]*?)\n\s*\}/gm;
+  let match;
+  while ((match = noteRegex.exec(dsl)) !== null) {
+    const title = match[1] || match[2] || match[3] || 'Note';
+    let rawContent = (match[4] || '').trim();
+    if ((rawContent.startsWith("'") && rawContent.endsWith("'")) || 
+        (rawContent.startsWith('"') && rawContent.endsWith('"'))) {
+      rawContent = rawContent.slice(1, -1);
+    }
+    notes.push({ title, content: rawContent });
+  }
+
+  // Remove notes from DSL so they don't interfere with line parsing
+  const dslWithoutNotes = dsl.replace(noteRegex, '');
+  const remainingLines = dslWithoutNotes.split('\n');
 
   let currentTable: DslTable | null = null;
 
-  for (const line of lines) {
-    if (COMMENT_RE.test(line)) continue;
+  for (const line of remainingLines) {
+    if (COMMENT_RE.test(line)) {
+      if (currentTable) {
+        const colorMatch = /@color:\s*(#[0-9a-fA-F]{3,8}|[a-zA-Z]+)/.exec(line);
+        if (colorMatch && colorMatch[1]) {
+          currentTable.color = colorMatch[1];
+        }
+      }
+      continue;
+    }
 
     if (TABLE_OPEN_RE.test(line)) {
       const match = TABLE_OPEN_RE.exec(line);
@@ -183,5 +217,5 @@ export function parseDsl(dsl: string): DslAst {
     }
   }
 
-  return { tables, refs };
+  return { tables, refs, notes };
 }

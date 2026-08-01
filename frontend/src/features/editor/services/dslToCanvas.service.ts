@@ -2,6 +2,7 @@ import type { Node, Edge } from '@/lib/reactflow';
 import type { TableNodeData, CanvasColumn, RelationshipEdgeData, ColumnDataType } from '@/features/canvas/types/CanvasNode';
 import { TABLE_COLORS } from '@/features/canvas/constants/canvas.constants';
 import type { DslAst, DslTable } from '../types/DslAst';
+import { useNoteStore } from '@/features/note/stores/note.store';
 
 const COLUMN_LAYOUT_STEP_X = 320;
 const LAYOUT_ROWS = 3;
@@ -34,7 +35,7 @@ function buildTableNode(
 
   const columns: CanvasColumn[] = dslTable.columns.map((col, colIndex) => {
     const existingCol = existingData?.columns.find((c) => c.name === col.name);
-    let reviewState: typeof existingCol.reviewState = 'created';
+    let reviewState: any = 'created';
     if (publishedAst) {
       reviewState = publishedTable?.columns?.find(c => c.name === col.name) ? 'unchanged' : 'created';
     } else if (existingCol?.reviewState) {
@@ -58,7 +59,7 @@ function buildTableNode(
 
   const colorIndex = Math.abs(dslTable.name.charCodeAt(0)) % TABLE_COLORS.length;
   
-  let tableReviewState: typeof existingData.reviewState = 'created';
+  let tableReviewState: any = 'created';
   if (publishedAst) {
     tableReviewState = publishedTable ? 'unchanged' : 'created';
   } else if (existingData?.reviewState) {
@@ -155,7 +156,58 @@ export function dslAstToCanvasNodes(
   const nodes = [...connectedNodes, ...isolatedNodes];
 
   // Preserve non-table nodes (notes)
-  const noteNodes = existingNodes.filter((n) => n.type === 'note');
+  const noteNodes: Node[] = ast.notes?.map((noteDsl, index) => {
+    const existing = existingNodes.find(
+      (n) => n.type === 'note' && (n.data as unknown as any).title === noteDsl.title
+    );
+    const id = existing?.id ?? `note-${noteDsl.title}`;
+    
+    let computedPosition = { x: index * 300, y: -250 };
+    if (nodesData?.[id]) {
+      computedPosition = { x: nodesData[id].x, y: nodesData[id].y };
+    }
+
+    // Add or update to Note store
+    const store = useNoteStore.getState();
+    const existingStoreNote = store.notes[id];
+    
+    if (!existingStoreNote) {
+      store.addNote({
+        id,
+        title: noteDsl.title,
+        color: noteDsl.color,
+        content: noteDsl.content,
+        reviewState: 'created',
+        position: existing?.position ?? computedPosition,
+        width: 250,
+        height: 200,
+      });
+    } else {
+      const updates: any = {};
+      if (existingStoreNote.content !== noteDsl.content) updates.content = noteDsl.content;
+      if (existingStoreNote.color !== noteDsl.color) updates.color = noteDsl.color;
+      
+      if (Object.keys(updates).length > 0) {
+        store.updateNote(id, updates);
+      }
+    }
+
+    return {
+      id,
+      type: 'note',
+      position: existing?.position ?? computedPosition,
+      data: {
+        noteId: id,
+        title: noteDsl.title,
+        color: noteDsl.color,
+        content: noteDsl.content,
+        reviewState: 'created',
+        width: 250,
+        height: 200,
+      },
+    };
+  }) || [];
+
   const allNodes = [...nodes, ...noteNodes];
 
   const edges: Edge[] = [];

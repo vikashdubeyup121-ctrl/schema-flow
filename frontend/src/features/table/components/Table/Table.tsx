@@ -78,8 +78,9 @@ export const Table = memo(function Table({ tableId }: TableProps): ReactNode {
 
   return (
     <div
-      className="rounded-lg overflow-hidden bg-card"
+      className="rounded-lg overflow-hidden"
       style={{
+        backgroundColor: table.color ? `color-mix(in srgb, ${table.color} 10%, hsl(var(--card)))` : 'hsl(var(--card))',
         border: borderStyle,
         minWidth: TABLE.MIN_WIDTH,
         minHeight: estimatedHeight,

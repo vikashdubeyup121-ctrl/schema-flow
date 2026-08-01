@@ -1,4 +1,4 @@
-import type { DslAst, DslTable, DslColumn, DslRef, RefType } from '../types/DslAst';
+import type { DslAst, DslTable, DslColumn, DslRef, RefType, DslNote } from '../types/DslAst';
 
 // ─── Regex patterns ────────────────────────────────────────────────────────────
 
@@ -111,13 +111,48 @@ function parseRefStatement(line: string): DslRef | null {
 // ─── Main parser ───────────────────────────────────────────────────────────────
 
 export function parseDsl(dsl: string): DslAst {
-  const lines = dsl.split('\n');
   const tables: DslTable[] = [];
   const refs: DslRef[] = [];
+  const notes: DslNote[] = [];
+
+  // Extract Notes first to avoid issues with '}' inside multi-line strings
+  const noteRegex = /^\s*[Nn]ote\s+(?:"([^"]+)"|'([^']+)'|(\w+))\s*\{([\s\S]*?)\n\s*\}/gm;
+  let match;
+  while ((match = noteRegex.exec(dsl)) !== null) {
+    const title = match[1] || match[2] || match[3] || 'Note';
+    let rawContent = (match[4] || '').trim();
+    let color: string | undefined;
+
+    const colorMatch = /\/\/\s*@color:\s*(#[0-9a-fA-F]{3,8}|[a-zA-Z]+)/.exec(rawContent);
+    if (colorMatch) {
+      color = colorMatch[1];
+      rawContent = rawContent.replace(colorMatch[0], '').trim();
+    }
+
+    let finalContent = rawContent;
+    const contentMatch = /(?:text\s*)?(?:"([^"]*)"|'([^']*)')/.exec(rawContent);
+    if (contentMatch) {
+      finalContent = contentMatch[1] ?? contentMatch[2] ?? rawContent;
+    } else {
+      if ((rawContent.startsWith("'") && rawContent.endsWith("'")) || 
+          (rawContent.startsWith('"') && rawContent.endsWith('"'))) {
+        finalContent = rawContent.slice(1, -1);
+      }
+    }
+    const noteNode: any = { title, content: finalContent };
+    if (color) {
+      noteNode.color = color;
+    }
+    notes.push(noteNode);
+  }
+
+  // Remove notes from DSL so they don't interfere with line parsing
+  const dslWithoutNotes = dsl.replace(noteRegex, '');
+  const remainingLines = dslWithoutNotes.split('\n');
 
   let currentTable: DslTable | null = null;
 
-  for (const line of lines) {
+  for (const line of remainingLines) {
     if (COMMENT_RE.test(line)) {
       if (currentTable) {
         const colorMatch = /@color:\s*(#[0-9a-fA-F]{3,8}|[a-zA-Z]+)/.exec(line);
@@ -200,5 +235,5 @@ export function parseDsl(dsl: string): DslAst {
     }
   }
 
-  return { tables, refs };
+  return { tables, refs, notes };
 }

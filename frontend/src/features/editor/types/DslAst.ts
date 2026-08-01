@@ -27,7 +27,14 @@ export interface DslRef {
   type: RefType;
 }
 
+export interface DslNote {
+  title: string;
+  content: string;
+  color?: string;
+}
+
 export interface DslAst {
   tables: DslTable[];
   refs: DslRef[];
+  notes: DslNote[];
 }

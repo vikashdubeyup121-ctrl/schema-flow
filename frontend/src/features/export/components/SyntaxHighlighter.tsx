@@ -1,4 +1,4 @@
-import React from 'react';
+import  'react';
 import { PrismLight as SyntaxHighlighterComponent } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql';

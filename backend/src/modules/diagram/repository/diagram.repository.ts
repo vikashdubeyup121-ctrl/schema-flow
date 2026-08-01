@@ -85,8 +85,11 @@ export class DiagramRepository {
         const { parseDsl } = await import('../parser/dslParser');
         const ast = parseDsl(data.dslText);
 
-        // Wipe existing tables/relationships for this version
+        // Wipe existing tables/relationships/notes for this version
         await tx.schemaTable.deleteMany({
+          where: { versionId: diagram.activeDraftVersionId },
+        });
+        await tx.schemaNote.deleteMany({
           where: { versionId: diagram.activeDraftVersionId },
         });
 
@@ -161,6 +164,23 @@ export class DiagramRepository {
             });
           }
         }
+
+        // Insert notes
+        for (const note of ast.notes) {
+          const noteId = crypto.randomUUID();
+          await tx.schemaNote.create({
+            data: {
+              id: noteId,
+              versionId: diagram.activeDraftVersionId,
+              lineageId: noteId,
+              title: note.title,
+              markdown: note.content,
+              color: note.color,
+              x: data.nodesData?.[`note-${note.title}`]?.x ?? 0,
+              y: data.nodesData?.[`note-${note.title}`]?.y ?? 0,
+            },
+          });
+        }
       }
 
       return diagram;
@@ -218,6 +238,10 @@ export class DiagramRepository {
         data: { reviewState: 'UNCHANGED' }
       });
       await tx.schemaRelationship.updateMany({
+        where: { versionId: publishedVersion.id },
+        data: { reviewState: 'UNCHANGED' }
+      });
+      await tx.schemaNote.updateMany({
         where: { versionId: publishedVersion.id },
         data: { reviewState: 'UNCHANGED' }
       });

@@ -76,7 +76,7 @@ export const Note = memo(function Note({ noteId }: NoteProps): ReactNode {
     <div
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      className="rounded-lg bg-card flex flex-col overflow-hidden cursor-pointer group/note nodrag"
+      className="rounded-lg bg-card flex flex-col overflow-hidden cursor-pointer group/note"
       style={{
         border: borderStyle,
         minWidth: CANVAS.NOTE_MIN_WIDTH,

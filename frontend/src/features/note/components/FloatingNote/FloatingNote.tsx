@@ -21,14 +21,22 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
     [noteId, selectNote],
   );
 
-  const handleDoubleClick = useCallback(() => {
+  const handleDoubleClick = useCallback((e: MouseEvent) => {
     if (!note) return;
+    e.stopPropagation();
     setEditValue(note.content);
     setIsEditing(true);
   }, [note]);
 
+  const handleHeaderDoubleClick = useCallback((e: MouseEvent) => {
+    if (!note) return;
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('editor:scroll-to-note', { detail: note.title }));
+  }, [note]);
+
   const handleBlur = useCallback(() => {
     useNoteStore.getState().updateNote(noteId, { content: editValue });
+    window.dispatchEvent(new CustomEvent('canvas:note-changed'));
     setIsEditing(false);
   }, [noteId, editValue]);
 
@@ -54,6 +62,17 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
     [note],
   );
 
+  const handleColorPreview = useCallback((color: string) => {
+    useNoteStore.getState().updateNote(noteId, { color });
+  }, [noteId]);
+
+  const handleColorSubmit = useCallback((color: string) => {
+    useNoteStore.getState().updateNote(noteId, { color });
+    window.dispatchEvent(new CustomEvent('canvas:change-note-color', {
+      detail: { noteId, color }
+    }));
+  }, [noteId]);
+
   if (!note) return null;
 
   const reviewColor = REVIEW_STATE_COLORS[note.reviewState];
@@ -68,8 +87,9 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
     <div
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      className="rounded-lg bg-card flex flex-col overflow-hidden cursor-pointer group/note nodrag"
+      className="rounded-lg flex flex-col overflow-hidden cursor-pointer group/note"
       style={{
+        backgroundColor: note.color ? `color-mix(in srgb, ${note.color} 10%, hsl(var(--card)))` : 'hsl(var(--card))',
         border: borderStyle,
         minWidth: CANVAS.NOTE_MIN_WIDTH,
         minHeight: CANVAS.NOTE_MIN_HEIGHT,
@@ -78,7 +98,15 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
         opacity: note.reviewState === 'deleted' ? 0.6 : 1,
       }}
     >
-      <NoteHeader isEditing={isEditing} onEditClick={handleEditClick} />
+      <NoteHeader 
+        title={note.title} 
+        color={note.color} 
+        isEditing={isEditing} 
+        onEditClick={handleEditClick} 
+        onHeaderDoubleClick={handleHeaderDoubleClick}
+        onColorPreview={handleColorPreview}
+        onColorSubmit={handleColorSubmit}
+      />
       <NoteBody
         content={note.content}
         isEditing={isEditing}

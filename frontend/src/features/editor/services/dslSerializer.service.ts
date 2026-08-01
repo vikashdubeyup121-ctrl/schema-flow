@@ -1,5 +1,6 @@
 import type { Node, Edge } from '@/lib/reactflow';
-import type { TableNodeData, RelationshipEdgeData } from '@/features/canvas/types/CanvasNode';
+import type { TableNodeData, RelationshipEdgeData, NoteNodeData } from '@/features/canvas/types/CanvasNode';
+import { useNoteStore } from '@/features/note/stores/note.store';
 
 function serializeTable(data: TableNodeData): string {
   const lines: string[] = [`Table ${data.name} {`];
@@ -26,6 +27,27 @@ function serializeTable(data: TableNodeData): string {
   return lines.join('\n');
 }
 
+function serializeNote(data: NoteNodeData): string {
+  const storeNote = useNoteStore.getState().notes[data.noteId];
+  const content = storeNote?.content || data.content || '';
+  const title = (data as any).title || 'Note';
+  const color = (data as any).color;
+
+  const lines: string[] = [`Note "${title}" {`];
+  if (color) {
+    lines.push(`  // @color: ${color}`);
+  }
+  
+  if (content) {
+    lines.push(`  '${content}'`);
+  } else {
+    lines.push(`  ''`);
+  }
+  
+  lines.push('}');
+  return lines.join('\n');
+}
+
 function relationshipTypeToRefSymbol(type: string): string {
   switch (type) {
     case 'ONE_TO_MANY': return '>';
@@ -39,10 +61,15 @@ export function serializeToDsl(nodes: Node[], edges: Edge[]): string {
   const parts: string[] = [];
 
   const tableNodes = nodes.filter((n) => n.type === 'table');
-
   for (const node of tableNodes) {
     const data = node.data as unknown as TableNodeData;
     parts.push(serializeTable(data));
+  }
+
+  const noteNodes = nodes.filter((n) => n.type === 'note');
+  for (const node of noteNodes) {
+    const data = node.data as unknown as NoteNodeData;
+    parts.push(serializeNote(data));
   }
 
   const refLines: string[] = [];

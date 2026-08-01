@@ -10,11 +10,13 @@ export interface DslColumn {
   refTarget: string | null;
   refType: RefType | null;
   inlineFullRef?: DslRef | null;
+  note?: string | null;
 }
 
 export interface DslTable {
   name: string;
   columns: DslColumn[];
+  color?: string;
 }
 
 export interface DslRef {
@@ -25,7 +27,14 @@ export interface DslRef {
   type: RefType;
 }
 
+export interface DslNote {
+  title: string;
+  content: string;
+  color?: string;
+}
+
 export interface DslAst {
   tables: DslTable[];
   refs: DslRef[];
+  notes: DslNote[];
 }

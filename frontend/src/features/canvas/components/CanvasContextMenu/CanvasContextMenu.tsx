@@ -3,6 +3,7 @@ import { useClickOutside } from '@/shared/hooks';
 import { useCanvasContextMenuStore } from '../../stores/canvasContextMenu.store';
 import { useCanvasClipboardStore } from '../../stores/canvasClipboard.store';
 import { useTableStore } from '@/features/table/stores/table.store';
+import { useNoteStore } from '@/features/note/stores/note.store';
 import { RenameDialog } from '@/shared/components/RenameDialog';
 import { ColorPicker } from '@/shared/components/ColorPicker';
 import { TABLE_COLORS } from '../../constants/canvas.constants';
@@ -46,6 +47,7 @@ export interface CanvasContextMenuProps {
   onFitView: () => void;
   onRenameTable: (tableId: string, newName: string) => void;
   onChangeTableColor: (tableId: string, color: string) => void;
+  onChangeNoteColor: (noteId: string, color: string) => void;
   onChangeRelationshipType: (relId: string, type: RelationshipType) => void;
 }
 
@@ -57,6 +59,7 @@ export function CanvasContextMenu({
   onFitView,
   onRenameTable,
   onChangeTableColor,
+  onChangeNoteColor,
   onChangeRelationshipType,
 }: CanvasContextMenuProps): ReactNode {
   const { open, x, y, targetType, targetId, closeMenu } = useCanvasContextMenuStore();
@@ -90,11 +93,14 @@ export function CanvasContextMenu({
 
   const handleColorChange = useCallback(
     (color: string) => {
-      if (targetId) onChangeTableColor(targetId, color);
+      if (targetId) {
+        if (targetType === 'table') onChangeTableColor(targetId, color);
+        else if (targetType === 'note') onChangeNoteColor(targetId, color);
+      }
       setColorPickerOpen(false);
       closeMenu();
     },
-    [targetId, onChangeTableColor, closeMenu],
+    [targetId, targetType, onChangeTableColor, onChangeNoteColor, closeMenu],
   );
 
   const handleChangeRelType = useCallback(
@@ -113,6 +119,11 @@ export function CanvasContextMenu({
   const currentTableColor =
     targetType === 'table' && targetId
       ? (useTableStore.getState().tables[targetId]?.color ?? TABLE_COLORS[0])
+      : TABLE_COLORS[0];
+
+  const currentNoteColor =
+    targetType === 'note' && targetId
+      ? (useNoteStore.getState().notes[targetId]?.color ?? TABLE_COLORS[0])
       : TABLE_COLORS[0];
 
   if (!open) return null;
@@ -177,6 +188,16 @@ export function CanvasContextMenu({
         {targetType === 'note' && targetId && (
           <>
             <MenuItem label="Edit Note" onClick={closeMenu} />
+            <MenuItem label="Change Color" onClick={() => setColorPickerOpen((v) => !v)} />
+            {colorPickerOpen && (
+              <div className="px-3 py-2">
+                <ColorPicker
+                  value={currentNoteColor}
+                  options={TABLE_COLORS}
+                  onChange={handleColorChange}
+                />
+              </div>
+            )}
             <Separator />
             <MenuItem
               label="Delete Note"

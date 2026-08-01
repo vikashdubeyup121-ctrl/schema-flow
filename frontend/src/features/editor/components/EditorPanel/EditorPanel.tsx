@@ -14,9 +14,12 @@ const dslLinter = linter((view) => {
   const lines = doc.toString().split('\n');
 
   let inTable = false;
+  let inNote = false;
 
   const TABLE_OPEN_RE = /^\s*[Tt]able\s+(\w+)\s*\{/;
   const TABLE_CLOSE_RE = /^\s*\}/;
+  const NOTE_OPEN_RE = /^\s*[Nn]ote\s+(?:"([^"]+)"|'([^']+)'|(\w+))\s*\{/;
+  const NOTE_CLOSE_RE = /^\s*\}/;
   const REF_STATEMENT_RE = /^\s*[Rr]ef(?:\s+\w+)?\s*:\s*(\w+)\.(\w+)\s*([><-])\s*(\w+)\.(\w+)/;
   const COMMENT_RE = /^\s*\/\//;
   const COLUMN_RE = /^\s*(\w+)\s+(\w+)(?:\s*\[([^\]]*)\])?/;
@@ -34,13 +37,19 @@ const dslLinter = linter((view) => {
       continue;
     }
 
-    if (TABLE_CLOSE_RE.test(line)) {
-      if (!inTable) {
+    if (NOTE_OPEN_RE.test(line)) {
+      inNote = true;
+      continue;
+    }
+
+    if (TABLE_CLOSE_RE.test(line) || NOTE_CLOSE_RE.test(line)) {
+      if (!inTable && !inNote) {
         diagnostics.push({
-          from, to, severity: 'error', message: 'Unexpected closing brace without an open table',
+          from, to, severity: 'error', message: 'Unexpected closing brace without an open table or note',
         });
       }
       inTable = false;
+      inNote = false;
       continue;
     }
 
@@ -54,9 +63,12 @@ const dslLinter = linter((view) => {
           from, to, severity: 'error', message: 'Invalid column definition format',
         });
       }
+    } else if (inNote) {
+      // notes can have any content
+      continue;
     } else {
       diagnostics.push({
-        from, to, severity: 'error', message: 'Expected Table or Ref definition',
+        from, to, severity: 'error', message: 'Expected Table, Note, or Ref definition',
       });
     }
   }
@@ -71,6 +83,7 @@ const dslLanguage = StreamLanguage.define<{}>({
     if (stream.eatSpace()) return null;
     if (stream.match(/^\/\/.*/)) return 'comment';
     if (stream.match(/^[Tt]able\b/)) return 'keyword';
+    if (stream.match(/^[Nn]ote\b/)) return 'keyword';
     if (stream.match(/^[Rr]ef\b/)) return 'keyword';
     if (stream.match(/^(varchar|uuid|int|bigint|smallint|decimal|float|double|text|char|boolean|date|timestamp|timestamptz|json|jsonb|bytea|serial|bigserial)\b/i)) return 'type';
     if (stream.match(/^(pk|primary key|not null|unique|default)\b/i)) return 'modifier';
@@ -105,10 +118,13 @@ const appTheme = EditorView.theme({
     caretColor: 'hsl(var(--primary))',
   },
   '.cm-focused': {
-    outline: 'none',
+    outline: 'none !important',
   },
   '&.cm-focused': {
-    outline: 'none',
+    outline: 'none !important',
+  },
+  '.cm-editor.cm-focused': {
+    outline: 'none !important',
   },
   '.cm-gutters': {
     borderRight: '1px solid hsl(var(--border))',
@@ -181,6 +197,13 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
               if (match && match[1]) {
                 window.dispatchEvent(new CustomEvent('canvas:scroll-to-table', { detail: match[1] }));
               }
+              const noteMatch = /^\s*[Nn]ote\s+(?:"([^"]+)"|'([^']+)'|(\w+))\s*\{/.exec(line.text);
+              if (noteMatch) {
+                const title = noteMatch[1] || noteMatch[2] || noteMatch[3];
+                if (title) {
+                  window.dispatchEvent(new CustomEvent('canvas:scroll-to-note', { detail: title }));
+                }
+              }
             }
             return false;
           }
@@ -205,10 +228,26 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
         });
       }
     };
+    const handleScrollToNote = (e: CustomEvent<string>) => {
+      if (!viewRef.current) return;
+      const v = viewRef.current;
+      const doc = v.state.doc.toString();
+      // note title can be in quotes
+      const regex = new RegExp(`^\\s*[Nn]ote\\s+(?:"${e.detail}"|'${e.detail}'|${e.detail})\\s*\\{`, 'm');
+      const match = regex.exec(doc);
+      if (match) {
+        v.dispatch({
+          selection: { anchor: match.index },
+          effects: EditorView.scrollIntoView(match.index, { y: 'center' })
+        });
+      }
+    };
     window.addEventListener('editor:scroll-to-table', handleScrollToTable as EventListener);
+    window.addEventListener('editor:scroll-to-note', handleScrollToNote as EventListener);
 
     return () => {
       window.removeEventListener('editor:scroll-to-table', handleScrollToTable as EventListener);
+      window.removeEventListener('editor:scroll-to-note', handleScrollToNote as EventListener);
       view.destroy();
       viewRef.current = null;
     };
@@ -223,8 +262,12 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
     if (current === value) return;
 
     isExternalUpdateRef.current = true;
+    const selection = view.state.selection;
+    const mainAnchor = selection.main.anchor;
+    
     view.dispatch({
       changes: { from: 0, to: current.length, insert: value },
+      selection: { anchor: Math.min(mainAnchor, value.length) }
     });
     isExternalUpdateRef.current = false;
   }, [value]);

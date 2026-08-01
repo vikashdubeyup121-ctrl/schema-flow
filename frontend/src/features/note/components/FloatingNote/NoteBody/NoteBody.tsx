@@ -19,14 +19,19 @@ export const NoteBody = memo(function NoteBody({
   onKeyDown,
 }: NoteBodyProps): ReactNode {
   return (
-    <div className="flex-1 overflow-auto p-2">
+    <div className="flex-1 overflow-auto p-2 nodrag">
       {isEditing ? (
         <textarea
           value={editValue}
           onChange={(e) => onEditChange(e.target.value)}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          className="w-full h-full bg-transparent text-sm text-foreground resize-none border-none outline-none leading-relaxed"
+          onFocus={(e) => {
+            const val = e.target.value;
+            e.target.value = '';
+            e.target.value = val;
+          }}
+          className="w-full h-full bg-transparent text-sm text-foreground resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed"
           autoFocus
         />
       ) : content ? (

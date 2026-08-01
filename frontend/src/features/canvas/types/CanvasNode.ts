@@ -46,6 +46,8 @@ export interface TableNodeData extends Record<string, unknown> {
 
 export interface NoteNodeData extends Record<string, unknown> {
   noteId: string;
+  title: string;
+  color?: string | undefined;
   content: string;
   reviewState: ReviewState;
   width: number;

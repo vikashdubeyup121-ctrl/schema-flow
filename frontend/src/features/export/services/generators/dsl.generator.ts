@@ -9,7 +9,7 @@ export class DslGenerator implements SchemaGenerator {
     this.rawDsl = rawDsl;
   }
   
-  generate(ast: DslAst): string {
+  generate(_ast: DslAst): string {
     return this.rawDsl;
   }
 }
