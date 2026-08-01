@@ -43,6 +43,27 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
     }
   }, [isOpen]);
 
+  // Auto-detect source type based on content
+  useEffect(() => {
+    if (!content) return;
+    
+    const text = content.trim();
+    let detectedId = null;
+
+    if (text.includes('CREATE TABLE') || text.includes('PostgreSQL database dump')) {
+      detectedId = 'postgres';
+    } else if (text.includes('model ') && text.includes('{') && text.includes('}')) {
+      detectedId = 'prisma';
+    } else if (text.includes('new Schema') || text.includes('mongoose.Schema')) {
+      detectedId = 'mongodb';
+    }
+
+    if (detectedId && detectedId !== selectedPluginId && plugins.some(p => p.id === detectedId)) {
+      setSelectedPluginId(detectedId);
+      Toast.success(`Auto-detected ${plugins.find(p => p.id === detectedId)?.name}!`);
+    }
+  }, [content, plugins, selectedPluginId]);
+
   if (!isOpen) return null;
 
   const selectedPlugin = plugins.find(p => p.id === selectedPluginId);
@@ -147,16 +168,46 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
 
           {/* Right Column: Editor & Actions */}
           <div className="w-full md:w-2/3 p-6 flex flex-col gap-4 bg-card">
-            <div className="flex flex-col gap-2 flex-1">
+            <div className="flex flex-col gap-2 flex-1 relative">
               <label className="text-sm font-semibold text-foreground flex justify-between items-end">
-                <span>3. Paste Raw Schema</span>
+                <span>3. Paste Raw Schema or Upload File</span>
                 <span className="text-xs font-normal text-muted-foreground">Max 1MB</span>
               </label>
+              
+              <div className="flex items-center gap-2 mb-1">
+                <label className="cursor-pointer px-3 py-1.5 text-xs font-medium bg-surface-hover text-foreground border border-border rounded-md hover:bg-surface transition-colors flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Select File
+                  <input 
+                    type="file" 
+                    accept=".sql,.prisma,.txt,.js,.json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      if (file.size > 1000000) {
+                        Toast.error('File is too large. Max size is 1MB.');
+                        return;
+                      }
+                      
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setContent(event.target?.result as string || '');
+                        Toast.success('File loaded successfully!');
+                      };
+                      reader.onerror = () => Toast.error('Failed to read file.');
+                      reader.readAsText(file);
+                    }}
+                  />
+                </label>
+              </div>
+
               <textarea 
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="flex-1 w-full p-4 bg-[#1e1e1e] text-[#d4d4d4] border border-border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder:text-zinc-600"
-                placeholder="Paste the output of the extraction command here..."
+                placeholder="Paste the output of the extraction command here or upload a file..."
                 spellCheck={false}
               />
             </div>
