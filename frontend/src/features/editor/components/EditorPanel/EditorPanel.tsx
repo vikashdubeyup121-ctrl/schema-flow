@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useCallback, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useEffect, useRef, useCallback, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -153,9 +153,12 @@ interface EditorPanelProps {
   onWidthChange: (width: number) => void;
   onSave?: () => void;
   isReadOnly?: boolean;
+  versions?: any[];
+  onPreviewVersion?: (version: any) => void;
 }
 
-export const EditorPanel = memo(function EditorPanel({ value, onChange, width, onWidthChange, onSave, isReadOnly = false }: EditorPanelProps): ReactNode {
+export const EditorPanel = memo(function EditorPanel({ value, onChange, width, onWidthChange, onSave, isReadOnly = false, versions = [], onPreviewVersion }: EditorPanelProps): ReactNode {
+  const [activeTab, setActiveTab] = useState<'code' | 'history'>('code');
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const isExternalUpdateRef = useRef(false);
@@ -302,17 +305,31 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
       className="relative flex flex-col h-full border-r border-border bg-[#282c34] shrink-0"
       style={{ width }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-[#21252b]">
-        <span className="text-xs font-semibold text-[#abb2bf] uppercase tracking-wide">
-          Schema Editor
-        </span>
+      {/* Header Tabs */}
+      <div className="flex items-center px-3 border-b border-border/50 bg-[#21252b] h-10 gap-4">
+        <button
+          onClick={() => setActiveTab('code')}
+          className={`text-xs font-semibold uppercase tracking-wide h-full border-b-2 transition-colors ${
+            activeTab === 'code' ? 'border-primary text-primary' : 'border-transparent text-[#abb2bf] hover:text-[#d7dae0]'
+          }`}
+        >
+          Code
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`text-xs font-semibold uppercase tracking-wide h-full border-b-2 transition-colors ${
+            activeTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-[#abb2bf] hover:text-[#d7dae0]'
+          }`}
+        >
+          History
+        </button>
       </div>
 
       {/* Editor */}
       <div 
         ref={containerRef} 
         className="flex-1 overflow-hidden" 
+        style={{ display: activeTab === 'code' ? 'block' : 'none' }}
         onKeyDown={(e) => {
           if (isReadOnly) {
             // Ignore navigation keys
@@ -323,6 +340,38 @@ export const EditorPanel = memo(function EditorPanel({ value, onChange, width, o
           }
         }}
       />
+
+      {/* History Timeline */}
+      {activeTab === 'history' && (
+        <div className="flex-1 overflow-y-auto p-4 bg-[#282c34] text-[#abb2bf]">
+          {versions.filter(v => v.status === 'PUBLISHED').length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center mt-10">No history available.</div>
+          ) : (
+            <div className="space-y-4">
+              {versions.filter(v => v.status === 'PUBLISHED').sort((a, b) => b.versionNumber - a.versionNumber).map((v) => (
+                <div 
+                  key={v.id} 
+                  className="bg-[#21252b] border border-border/50 rounded-lg p-3 hover:border-primary/50 cursor-pointer transition-colors"
+                  onClick={() => onPreviewVersion?.(v)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-white text-sm">v{v.versionNumber}.0</span>
+                    <span className="text-xs text-[#abb2bf] bg-surface px-2 py-0.5 rounded-full">{v.status}</span>
+                  </div>
+                  <div className="text-xs text-[#abb2bf]">
+                    Published {v.publishedAt ? new Date(v.publishedAt).toLocaleDateString() : 'Unknown'}
+                  </div>
+                  {v.publishedBy && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      by {v.publishedByUser?.name || v.publishedByUser?.email || `User ${v.publishedBy.slice(0, 5)}`}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Resize handle */}
       <div

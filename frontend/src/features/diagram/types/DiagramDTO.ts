@@ -18,6 +18,7 @@ export interface DiagramResponse {
   updatedAt: string;
   updatedBy: string | null;
   updatedByName?: string;
+  versions?: any[];
 }
 
 export interface CreateDiagramRequest {

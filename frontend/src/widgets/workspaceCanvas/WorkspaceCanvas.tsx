@@ -106,6 +106,8 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const [hasInitialized, setHasInitialized] = useState(false);
   const [showOnlyChanges, setShowOnlyChanges] = useState(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState<any>(null);
+  const [draftBackup, setDraftBackup] = useState<string | null>(null);
 
   const handleDownloadImage = async () => {
     if (isDownloadingImage) return;
@@ -182,6 +184,36 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     enabled: hasInitialized, // Always enable sync after init to load nodes!
     onDirty: () => setIsDirty(true),
   });
+
+  const handlePreviewVersion = useCallback((version: any) => {
+    if (!previewVersion) setDraftBackup(dslText);
+    setPreviewVersion(version);
+    onDslChange(version.dslText || '');
+  }, [dslText, onDslChange, previewVersion]);
+
+  const handleExitPreview = useCallback(() => {
+    if (draftBackup !== null) {
+      onDslChange(draftBackup);
+    }
+    setPreviewVersion(null);
+    setDraftBackup(null);
+  }, [draftBackup, onDslChange]);
+
+  const handleRestoreVersion = useCallback(async () => {
+    if (!previewVersion || !diagram) return;
+    try {
+      await updateDiagram({
+        diagramId,
+        projectId: diagram.projectId,
+        dslText: previewVersion.dslText || '',
+      });
+      setDraftBackup(null);
+      setPreviewVersion(null);
+      Toast.success(`Restored to v${previewVersion.versionNumber}.0`);
+    } catch (e) {
+      Toast.error('Failed to restore version');
+    }
+  }, [diagramId, diagram, previewVersion]);
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -573,6 +605,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     return <div className="flex items-center justify-center w-full h-full text-muted-foreground">Loading diagram...</div>;
   }
 
+  const isPreviewMode = !!previewVersion;
+  const isCanvasReadOnly = isReadOnly || isPreviewMode;
+
   return (
     <div className="flex w-full h-full overflow-hidden">
       {isOpen && (
@@ -582,26 +617,53 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           width={width}
           onWidthChange={setSidebarWidth}
           onSave={flush}
-          isReadOnly={isReadOnly}
+          isReadOnly={isCanvasReadOnly}
+          versions={diagram?.versions || []}
+          onPreviewVersion={handlePreviewVersion}
         />
       )}
 
       {/* Center: Canvas */}
       <div className="relative flex-1 overflow-hidden">
+        {isPreviewMode && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-primary/10 border border-primary text-primary px-6 py-3 rounded-full shadow-lg flex items-center gap-6 backdrop-blur-md">
+            <span className="font-semibold text-sm">
+              👀 Previewing v{previewVersion.versionNumber}.0
+              {previewVersion.publishedAt && ` - Published ${new Date(previewVersion.publishedAt).toLocaleDateString()}`}
+            </span>
+            <div className="flex items-center gap-2 border-l border-primary/20 pl-6">
+              {!isReadOnly && (
+                <button 
+                  onClick={handleRestoreVersion}
+                  className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-xs font-bold hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  Restore Version
+                </button>
+              )}
+              <button 
+                onClick={handleExitPreview}
+                className="bg-background text-foreground border border-border px-4 py-1.5 rounded-full text-xs font-bold hover:bg-surface-hover transition-colors shadow-sm"
+              >
+                Exit Preview
+              </button>
+            </div>
+          </div>
+        )}
+
         <CanvasCore
           nodes={displayNodes}
           edges={displayEdges}
-          nodesDraggable={!isReadOnly}
-          nodesConnectable={!isReadOnly}
-          isReadOnly={isReadOnly}
+          nodesDraggable={!isCanvasReadOnly}
+          nodesConnectable={!isCanvasReadOnly}
+          isReadOnly={isCanvasReadOnly}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
-          {...(isReadOnly ? {} : {
+          {...(isCanvasReadOnly ? {} : {
             onConnect: handleConnect,
           })}
         />
 
-        {!isReadOnly && (
+        {!isCanvasReadOnly && (
           <CanvasContextMenu
             onAddTable={_handleAddTableFromContextMenu}
             onAddNote={_handleAddNoteFromContextMenu}
@@ -624,9 +686,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           <div className="flex-1 min-w-0" />
 
           {/* Center Column: Toolbar (Fixed Width) */}
-          <div className="shrink-0 pointer-events-auto flex justify-center">
+          <div className={`shrink-0 pointer-events-auto flex justify-center ${isPreviewMode ? 'opacity-0 pointer-events-none' : ''}`}>
             <CanvasToolbar
-              {...(!isReadOnly && {
+              {...(!isCanvasReadOnly && {
                 onAddTable: handleAddTableFromToolbar,
                 onAddNote: handleAddNoteFromToolbar,
                 onPublish: async () => {
@@ -689,19 +751,19 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
                 
                 {isMenuOpen && (
                   <div className="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-lg shadow-lg py-1 text-xs text-foreground z-50">
-                    {!isReadOnly && (
+                    {!isCanvasReadOnly && (
                       <button onClick={() => { flush(); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
                         <Save size={14} className="text-muted-foreground" />
                         Save Changes
                       </button>
                     )}
-                    {!isReadOnly && (
+                    {!isCanvasReadOnly && (
                       <button onClick={() => { setIsImportOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
                         <Upload size={14} className="text-muted-foreground" />
                         Import Schema
                       </button>
                     )}
-                    {!isReadOnly && (
+                    {!isCanvasReadOnly && (
                       <button onClick={() => { setIsExportOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
                         <Download size={14} className="text-muted-foreground" />
                         Export Schema

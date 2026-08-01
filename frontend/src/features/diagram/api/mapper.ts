@@ -16,5 +16,6 @@ export function mapDiagramResponseToDiagram(dto: DiagramResponse): Diagram {
     updatedAt: dto.updatedAt,
     updatedBy: dto.updatedBy,
     updatedByName: dto.updatedByName,
+    versions: dto.versions,
   };
 }

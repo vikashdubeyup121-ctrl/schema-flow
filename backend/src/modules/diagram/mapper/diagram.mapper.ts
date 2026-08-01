@@ -20,6 +20,7 @@ export interface DiagramResponse {
   updatedAt: string;
   updatedBy: string | null;
   updatedByName?: string;
+  versions?: any[];
 }
 
 export class DiagramMapper {
@@ -66,6 +67,7 @@ export class DiagramMapper {
       updatedAt: diagram.updatedAt.toISOString(),
       updatedBy: diagram.updatedBy,
       updatedByName: diagram.updatedByUser?.name,
+      versions: diagram.versions || [],
     };
   }
 }

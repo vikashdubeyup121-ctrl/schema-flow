@@ -12,4 +12,5 @@ export interface Diagram {
   updatedAt: string;
   updatedBy: string | null;
   updatedByName?: string | undefined;
+  versions?: any[] | undefined;
 }

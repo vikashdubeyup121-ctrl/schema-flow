@@ -53,7 +53,9 @@ export class DiagramRepository {
       where: { id, deletedAt: null },
       include: { 
         updatedByUser: { select: { name: true } },
-        versions: true 
+        versions: {
+          include: { publishedByUser: { select: { name: true, email: true } } }
+        } 
       },
     });
   }
@@ -63,7 +65,9 @@ export class DiagramRepository {
       where: { projectId, deletedAt: null },
       include: { 
         updatedByUser: { select: { name: true } },
-        versions: true
+        versions: {
+          include: { publishedByUser: { select: { name: true, email: true } } }
+        }
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -225,6 +229,7 @@ export class DiagramRepository {
           status: 'PUBLISHED',
           publishedBy: userId,
           publishedAt: new Date(),
+          dslText: diagram.dslText,
         }
       });
 

@@ -18,6 +18,7 @@ model User {
   projectMembers ProjectMember[]
   auditLogs      AuditLog[]
   diagrams       Diagram[]
+  diagramVersions DiagramVersion[]
 
   @@map("users")
 }
@@ -108,14 +109,16 @@ model DiagramVersion {
   basedOnVersionId String?       @map("based_on_version_id")
   createdBy        String        @map("created_by")
   publishedBy      String?       @map("published_by")
+  dslText          String?       @map("dsl_text")
   revisionNumber   Int           @default(1) @map("revision_number")
   createdAt        DateTime      @default(now()) @map("created_at")
   publishedAt      DateTime?     @map("published_at")
 
-  diagram       Diagram              @relation(fields: [diagramId], references: [id], onDelete: Cascade)
-  tables        SchemaTable[]
-  relationships SchemaRelationship[]
-  notes         SchemaNote[]
+  diagram          Diagram              @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  publishedByUser  User?                @relation(fields: [publishedBy], references: [id], onDelete: SetNull)
+  tables           SchemaTable[]
+  relationships    SchemaRelationship[]
+  notes            SchemaNote[]
 
   @@index([diagramId])
   @@map("diagram_versions")
