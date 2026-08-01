@@ -5,11 +5,12 @@ SchemaFlow is a modern, web-based database schema design and visualization tool.
 ## Features
 
 - **Code-First Design**: Write your schema in an intuitive, developer-friendly DSL with full syntax highlighting and live linting.
-- **Interactive Canvas**: Drag and drop tables, view relationships, and organize your ER diagram visually using React Flow.
-- **Real-Time Synchronization**: Any changes made in the code editor instantly reflect on the visual canvas, and vice-versa.
-- **Projects & Workspaces**: Organize your diagrams into projects.
-- **Role-Based Collaboration**: Add members to your projects as `EDITOR` or `VIEWER`. Viewers are completely restricted from modifying the diagram or its DSL.
-- **Secure Authentication**: JWT-based authentication system with secure session management.
+- **Interactive Canvas**: Drag and drop tables, view relationships, and organize your ER diagram visually using React Flow. Includes an advanced one-click **Auto-Layout Algorithm** built with Dagre to instantly untangle complex schemas.
+- **Real-Time Collaboration**: Powered by WebSockets (Socket.io), multiple users can edit the DSL and see updates live. Built-in Optimistic Concurrency Control prevents version conflicts.
+- **Guest Sandbox Mode**: Jump straight into a fully functional schema editor without creating an account. Your work is saved locally until you choose to register and save it to the cloud.
+- **Role-Based Workspaces**: Organize your diagrams into projects. Add members to your projects as `EDITOR` or `VIEWER`. Viewers are completely restricted from modifying the diagram or its DSL.
+- **Secure Authentication**: Google OAuth and JWT-based authentication system with secure session management.
+- **Automated CI/CD**: Fully configured for zero-downtime automated deployments using Vercel (Frontend) and Render (Backend).
 
 ## Tech Stack
 
@@ -17,26 +18,26 @@ SchemaFlow is a modern, web-based database schema design and visualization tool.
 - **Framework**: React 18 with TypeScript, Vite
 - **Styling**: TailwindCSS, Radix UI (shadcn/ui style components)
 - **State Management**: Zustand, React Query
-- **Canvas & Editor**: React Flow, CodeMirror 6
+- **Canvas & Editor**: React Flow, CodeMirror 6, Dagre (Auto-Layout)
 - **Routing**: Wouter
 
 ### Backend
 - **Framework**: Node.js, Fastify
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT (Access + Refresh Tokens)
+- **Database**: PostgreSQL (Neon.tech Serverless Postgres) with Prisma ORM
+- **WebSockets**: Socket.io for real-time multiplayer collaboration
+- **Authentication**: Google OAuth2, JWT (Access + Refresh Tokens)
 - **Validation**: Zod
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js (v18+)
-- PostgreSQL (Running locally or remotely)
-- PM2 (Optional, for running production-like local processes)
+- PostgreSQL (Running locally or remotely via Neon.tech)
 
 ### 1. Clone & Install
 ```bash
-git clone <repository-url>
-cd schemaFlow
+git clone https://github.com/VinaySingh96/schemaflow.git
+cd schemaflow
 
 # Install backend dependencies
 cd backend
@@ -51,16 +52,22 @@ npm install
 
 **Backend (`backend/.env`):**
 ```env
-PORT=3000
+PORT=4000
 DATABASE_URL="postgresql://user:password@localhost:5432/schemaflow"
 JWT_SECRET="your-super-secret-jwt-key"
 CORS_ORIGIN="http://localhost:5173"
 NODE_ENV="development"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_TOKEN_URI="https://oauth2.googleapis.com/token"
+GOOGLE_USER_INFO_URI="https://www.googleapis.com/oauth2/v3/userinfo"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/v1/auth/google/callback"
 ```
 
 **Frontend (`frontend/.env`):**
 ```env
-VITE_API_BASE_URL="http://localhost:3000/api/v1"
+VITE_API_BASE_URL="http://localhost:4000/api/v1"
+VITE_WS_URL="http://localhost:4000"
 ```
 
 ### 3. Database Setup
@@ -73,7 +80,7 @@ npx prisma db push
 
 ### 4. Running the App
 
-You can run both the frontend and backend simultaneously using the provided scripts.
+You can run both the frontend and backend simultaneously in separate terminal windows.
 
 **Run Backend (Development):**
 ```bash
@@ -85,11 +92,6 @@ npm run dev
 ```bash
 cd frontend
 npm run dev
-```
-
-*(Optional)* You can also use PM2 to manage the backend process if you are running it in a more persistent local setup:
-```bash
-pm2 start dist/server.js --name schemaflow-backend
 ```
 
 ## DSL Syntax Guide
@@ -119,6 +121,14 @@ Ref: users.id < posts.author_id
 - `>` : Many-to-One
 - `<` : One-to-Many
 - `-` : One-to-One
+
+## Deployment
+SchemaFlow is production-ready and configured for modern serverless deployment platforms:
+- **Frontend**: Deploy on [Vercel](https://vercel.com/) (configured via Ignored Build Steps to only build `main` branch).
+- **Backend**: Deploy on [Render](https://render.com/).
+- **Database**: Host on [Neon.tech](https://neon.tech/) Serverless Postgres.
+
+*See `docs/DEPLOYMENT.md` for full step-by-step CI/CD setup instructions.*
 
 ## License
 

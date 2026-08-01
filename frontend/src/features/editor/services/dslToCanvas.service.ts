@@ -34,13 +34,11 @@ function buildTableNode(
 
   const columns: CanvasColumn[] = dslTable.columns.map((col, colIndex) => {
     const existingCol = existingData?.columns.find((c) => c.name === col.name);
-    let reviewState = existingCol?.reviewState;
-    if (!reviewState) {
-      if (publishedAst) {
-        reviewState = publishedTable?.columns?.find(c => c.name === col.name) ? 'unchanged' : 'created';
-      } else {
-        reviewState = 'created';
-      }
+    let reviewState: typeof existingCol.reviewState = 'created';
+    if (publishedAst) {
+      reviewState = publishedTable?.columns?.find(c => c.name === col.name) ? 'unchanged' : 'created';
+    } else if (existingCol?.reviewState) {
+      reviewState = existingCol.reviewState;
     }
 
     return {
@@ -60,13 +58,11 @@ function buildTableNode(
 
   const colorIndex = Math.abs(dslTable.name.charCodeAt(0)) % TABLE_COLORS.length;
   
-  let tableReviewState = existingData?.reviewState;
-  if (!tableReviewState) {
-    if (publishedAst) {
-      tableReviewState = publishedTable ? 'unchanged' : 'created';
-    } else {
-      tableReviewState = 'created';
-    }
+  let tableReviewState: typeof existingData.reviewState = 'created';
+  if (publishedAst) {
+    tableReviewState = publishedTable ? 'unchanged' : 'created';
+  } else if (existingData?.reviewState) {
+    tableReviewState = existingData.reviewState;
   }
 
   const data: TableNodeData = {
@@ -182,13 +178,11 @@ export function dslAstToCanvasNodes(
     const edgeId = `rel-${sourceNode.id}-${targetNode.id}-${sourceCol.id}-${targetCol.id}`;
     const existingEdge = existingEdges.find((e) => e.id === edgeId);
 
-    let reviewState = existingEdge ? (existingEdge.data as unknown as RelationshipEdgeData).reviewState : undefined;
-    if (!reviewState) {
-      if (publishedAst) {
-        reviewState = publishedAst.refs?.find(r => r.fromTable === ref.fromTable && r.fromColumn === ref.fromColumn && r.toTable === ref.toTable && r.toColumn === ref.toColumn) ? 'unchanged' : 'created';
-      } else {
-        reviewState = 'created';
-      }
+    let reviewState: typeof existingEdge extends undefined ? undefined : any = 'created';
+    if (publishedAst) {
+      reviewState = publishedAst.refs?.find(r => r.fromTable === ref.fromTable && r.fromColumn === ref.fromColumn && r.toTable === ref.toTable && r.toColumn === ref.toColumn) ? 'unchanged' : 'created';
+    } else if (existingEdge?.data) {
+      reviewState = (existingEdge.data as unknown as RelationshipEdgeData).reviewState;
     }
 
     const edgeData: RelationshipEdgeData = {

@@ -1,11 +1,15 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/apiClient';
+import { STORAGE_KEYS } from '@/shared/constants/Storage';
 import type { AuthResponse } from '../types/AuthDTO';
 import { mapAuthResponseToUser } from './mapper';
 import { authKeys } from './keys';
 import type { User } from '../types/User';
 
-async function fetchCurrentUser(): Promise<User> {
+async function fetchCurrentUser(): Promise<User | null> {
+  if (!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)) {
+    return null;
+  }
   const response = await apiClient.get<AuthResponse>('/auth/me');
   return mapAuthResponseToUser(response.data);
 }

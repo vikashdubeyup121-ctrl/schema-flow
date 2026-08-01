@@ -45,13 +45,14 @@ export function buildApp(): FastifyInstance {
   app.register(require('../modules/version/routes/version.routes').versionRoutes, { prefix: '/api/v1' });
   app.register(require('../modules/parser/routes/parser.routes').parserRoutes, { prefix: '/api/v1' });
 
-  // Health check route
-  app.get('/health', async () => {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
+  // Health check routes
+  const healthCheck = async () => ({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
   });
+  
+  app.get('/health', healthCheck);
+  app.get('/api/v1/health', healthCheck);
 
   // 404 handler
   app.setNotFoundHandler((req, reply) => {

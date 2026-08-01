@@ -81,17 +81,17 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
     [setDslText],
   );
 
-  // Sync canvas from the initial DSL on first mount or when enabled becomes true
+  // Sync canvas from the DSL on first mount, when enabled, or when published version changes
   useEffect(() => {
     if (options.enabled === false) return;
     
     isSyncingFromEditorRef.current = true;
     try {
-      // Use the latest dslText from store but only run this once on enable
+      // Use the latest dslText from store
       const currentDsl = useEditorStore.getState().dslText;
       const ast = parseDsl(currentDsl);
-      const publishedAst = optionsRef.current.publishedDslText ? parseDsl(optionsRef.current.publishedDslText) : undefined;
-      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, [], [], publishedAst, optionsRef.current.nodesData);
+      const publishedAst = options.publishedDslText ? parseDsl(options.publishedDslText) : undefined;
+      const { nodes: newNodes, edges: newEdges } = dslAstToCanvasNodes(ast, optionsRef.current.nodes, optionsRef.current.edges, publishedAst, optionsRef.current.nodesData);
       optionsRef.current.onNodesChange(newNodes);
       optionsRef.current.onEdgesChange(newEdges);
       if (optionsRef.current.onSync) optionsRef.current.onSync(newNodes, newEdges);
@@ -99,7 +99,7 @@ export function useEditorSync(options: UseEditorSyncOptions): UseEditorSyncRetur
       isSyncingFromEditorRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.enabled]);
+  }, [options.enabled, options.publishedDslText]);
 
   return { dslText, onDslChange, syncCanvasToEditor };
 }
