@@ -40,6 +40,7 @@ import { useTableStore } from '@/features/table/stores/table.store';
 import { useColumnStore } from '@/features/column/stores/column.store';
 import { useNoteStore } from '@/features/note/stores/note.store';
 import { useRelationshipStore } from '@/features/relationship/stores/relationship.store';
+import { ImportSchemaModal } from '@/features/editor/components/ImportSchemaModal';
 // import { PropertiesPanel } from '@/widgets/workspace/PropertiesPanel';
 
 // ─── Inner component (uses useReactFlow — must be inside ReactFlowProvider) ───
@@ -74,6 +75,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const isReadOnly = isDataLoading ? false : userRole === 'VIEWER';
 
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // Start empty — useEditorSync populates from DSL on mount
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -515,6 +517,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           {...(isOwner && {
             onShare: () => setIsShareOpen(true),
           })}
+          {...(!isReadOnly && {
+            onImport: () => setIsImportOpen(true),
+          })}
           showOnlyChanges={showOnlyChanges}
           onToggleShowChanges={() => setShowOnlyChanges(prev => !prev)}
         />
@@ -571,6 +576,17 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           projectId={project.id}
           projectName={project.name}
           isOwner={isOwner}
+        />
+      )}
+
+      {isImportOpen && (
+        <ImportSchemaModal
+          isOpen={isImportOpen}
+          onClose={() => setIsImportOpen(false)}
+          diagramId={diagramId}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
+          }}
         />
       )}
     </div>

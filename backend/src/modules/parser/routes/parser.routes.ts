@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { ParserController } from '../controller/parser.controller';
+import { ImportParserController } from '../controller/import-parser.controller';
 import { ParserService } from '../service/parser.service';
 import { SchemaService } from '../../schema/service/schema.service';
 import { SchemaRepository } from '../../schema/repository/schema.repository';
@@ -12,9 +13,14 @@ export const parserRoutes: FastifyPluginAsync = async (app) => {
   const schemaService = new SchemaService(schemaRepo, prisma);
   
   const controller = new ParserController(parserService, schemaService);
+  const importController = new ImportParserController();
 
   app.addHook('preHandler', authMiddleware);
 
   app.post('/parser/preview', controller.previewImport);
   app.get('/versions/:versionId/export', controller.exportSchema);
+
+  // New import endpoints
+  app.get('/parser/plugins', importController.getPlugins);
+  app.post('/parser/import/:diagramId', importController.importSchema);
 };

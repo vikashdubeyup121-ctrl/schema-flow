@@ -24,6 +24,7 @@ interface CanvasToolbarProps {
   onToggleSidebar: () => void;
   onPublish?: (() => void) | undefined;
   onShare?: (() => void) | undefined;
+  onImport?: (() => void) | undefined;
   onSave?: (() => void) | undefined;
   onAutoLayout?: ((direction: string) => void) | undefined;
   showOnlyChanges?: boolean;
@@ -124,6 +125,7 @@ export function CanvasToolbar({
   onToggleSidebar,
   onPublish,
   onShare,
+  onImport,
   onSave,
   onAutoLayout,
   showOnlyChanges,
@@ -207,6 +209,15 @@ export function CanvasToolbar({
           className="ml-1 h-8 px-3 bg-secondary text-secondary-foreground border border-border text-xs font-semibold rounded-md hover:bg-surface-hover transition-colors shadow-sm"
         >
           Share
+        </button>
+      )}
+
+      {onImport && (
+        <button
+          onClick={onImport}
+          className="ml-1 h-8 px-3 bg-secondary text-secondary-foreground border border-border text-xs font-semibold rounded-md hover:bg-surface-hover transition-colors shadow-sm"
+        >
+          Import
         </button>
       )}
 

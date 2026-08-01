@@ -87,6 +87,7 @@ model Diagram {
   project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   updatedByUser User?            @relation(fields: [updatedBy], references: [id], onDelete: SetNull)
   versions      DiagramVersion[]
+  importHistory ImportHistory[]
 
   @@index([projectId])
   @@index([updatedAt])
@@ -248,4 +249,17 @@ model AuditLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model ImportHistory {
+  id         String   @id @default(cuid())
+  diagramId  String   @map("diagram_id")
+  pluginId   String   @map("plugin_id")
+  rawContent String   @map("raw_content")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  diagram Diagram @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+
+  @@index([diagramId])
+  @@map("import_history")
 }
