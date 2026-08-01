@@ -23,7 +23,7 @@ pg_dump "postgres://user:password@host:port/dbname" --schema-only --no-owner --n
 
     // A very naive SQL parser for MVP
     // We look for CREATE TABLE statements
-    const createTableRegex = /CREATE\s+TABLE\s+(?:public\.)?([A-Za-z0-9_]+)\s*\(([\s\S]*?)\);/gi;
+    const createTableRegex = /CREATE\s+TABLE\s+(?:[A-Za-z0-9_"]+\.)?"?([A-Za-z0-9_]+)"?\s*\(([\s\S]*?)\);/gi;
     let match;
     const dslTables: string[] = [];
     let foundTables = false;
@@ -74,7 +74,7 @@ pg_dump "postgres://user:password@host:port/dbname" --schema-only --no-owner --n
     }
 
     const dslRefs: string[] = [];
-    const alterTableRegex = /ALTER\s+TABLE\s+(?:ONLY\s+)?(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s+ADD\s+CONSTRAINT\s+[a-zA-Z0-9_]+\s+FOREIGN\s+KEY\s*\(([a-zA-Z0-9_]+)\)\s+REFERENCES\s+(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\(([a-zA-Z0-9_]+)\)/gi;
+    const alterTableRegex = /ALTER\s+TABLE\s+(?:ONLY\s+)?(?:[a-zA-Z0-9_"]+\.)?"?([a-zA-Z0-9_]+)"?\s+ADD\s+CONSTRAINT\s+"?[a-zA-Z0-9_]+"?\s+FOREIGN\s+KEY\s*\("?([a-zA-Z0-9_]+)"?\)\s+REFERENCES\s+(?:[a-zA-Z0-9_"]+\.)?"?([a-zA-Z0-9_]+)"?\s*\("?([a-zA-Z0-9_]+)"?\)/gi;
     
     let refMatch;
     while ((refMatch = alterTableRegex.exec(content)) !== null) {

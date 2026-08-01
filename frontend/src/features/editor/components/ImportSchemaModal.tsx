@@ -14,7 +14,7 @@ interface ImportSchemaModalProps {
   isOpen: boolean;
   onClose: () => void;
   diagramId: string;
-  onSuccess: () => void;
+  onSuccess: (updatedDiagram?: any) => void;
 }
 
 export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: ImportSchemaModalProps) {
@@ -77,14 +77,14 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
     setIsLoading(true);
     try {
       // apiClient will unwrap { success: true, data: ... }
-      await apiClient.post(`/parser/import/${diagramId}`, {
+      const res = await apiClient.post(`/parser/import/${diagramId}`, {
         pluginId: selectedPluginId,
         content,
         action
       });
 
       Toast.success('Schema imported successfully!');
-      onSuccess();
+      onSuccess(res);
       onClose();
     } catch (err: any) {
       Toast.error(err.response?.data?.error || err.message || 'Import failed.');

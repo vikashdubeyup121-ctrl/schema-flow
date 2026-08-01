@@ -728,8 +728,12 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           isOpen={isImportOpen}
           onClose={() => setIsImportOpen(false)}
           diagramId={diagramId}
-          onSuccess={() => {
+          onSuccess={(res) => {
             queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
+            const dsl = res?.data?.dslText;
+            if (dsl) {
+              onDslChange(dsl);
+            }
           }}
         />
       )}
