@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/shared/api/client';
+import { apiClient } from '@/shared/api/apiClient';
 import { Toast } from '@/shared/stores/toast.store';
+import { DatabaseIcon, TerminalIcon, AlertCircleIcon } from 'lucide-react';
 
 interface Plugin {
   id: string;
@@ -25,13 +26,19 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
 
   useEffect(() => {
     if (isOpen) {
-      apiClient.get('/api/v1/parser/plugins').then((res) => {
-        if (res.data.success) {
-          setPlugins(res.data.data);
-          if (res.data.data.length > 0) {
-            setSelectedPluginId(res.data.data[0].id);
+      apiClient.get('/parser/plugins').then((res) => {
+        // apiClient interceptor unwraps { success: true, data: [...] } into just the array
+        if (Array.isArray(res.data)) {
+          setPlugins(res.data);
+          if (res.data.length > 0) {
+            setSelectedPluginId(res.data[0].id);
           }
+        } else {
+          console.error("Unexpected plugins response format:", res.data);
         }
+      }).catch(err => {
+        console.error("Failed to fetch plugins", err);
+        Toast.error("Failed to load parser plugins");
       });
     }
   }, [isOpen]);
@@ -48,17 +55,16 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
 
     setIsLoading(true);
     try {
-      const res = await apiClient.post(`/api/v1/parser/import/${diagramId}`, {
+      // apiClient will unwrap { success: true, data: ... }
+      await apiClient.post(`/parser/import/${diagramId}`, {
         pluginId: selectedPluginId,
         content,
         action
       });
 
-      if (res.data.success) {
-        Toast.success('Schema imported successfully!');
-        onSuccess();
-        onClose();
-      }
+      Toast.success('Schema imported successfully!');
+      onSuccess();
+      onClose();
     } catch (err: any) {
       Toast.error(err.response?.data?.error || err.message || 'Import failed.');
     } finally {
@@ -67,91 +73,159 @@ export function ImportSchemaModal({ isOpen, onClose, diagramId, onSuccess }: Imp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl p-6 bg-card border border-border rounded-lg shadow-xl flex flex-col gap-4">
-        <h2 className="text-xl font-semibold text-foreground">Import Database Schema</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-5xl bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-muted-foreground">Source Type</label>
-          <select 
-            value={selectedPluginId} 
-            onChange={(e) => setSelectedPluginId(e.target.value)}
-            className="h-10 px-3 bg-surface border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            {plugins.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {selectedPlugin && (
-          <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
-            <h3 className="text-xs font-semibold text-primary mb-1">Step 1: Extract Schema</h3>
-            <p className="text-xs text-primary/80 mb-2">Run the following command or follow these instructions to extract your schema:</p>
-            <pre className="bg-background border border-border p-2 rounded text-xs overflow-x-auto text-muted-foreground">
-              {selectedPlugin.importCommand}
-            </pre>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-border bg-surface flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-md">
+              <DatabaseIcon size={18} className="text-primary" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">Import Database Schema</h2>
           </div>
-        )}
-
-        <div className="flex flex-col gap-1.5 flex-1">
-          <label className="text-sm font-medium text-muted-foreground">Step 2: Paste Schema</label>
-          <textarea 
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-48 p-3 bg-surface border border-border rounded-md text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-            placeholder="Paste your schema here..."
-          />
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
         </div>
+        
+        {/* Body 2-Column Layout */}
+        <div className="flex flex-col md:flex-row h-[600px] max-h-[80vh]">
+          
+          {/* Left Column: Source Selection & Instructions */}
+          <div className="w-full md:w-1/3 border-r border-border bg-surface/30 p-6 flex flex-col gap-6 overflow-y-auto">
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-3 block">1. Select Source Database</label>
+              <div className="flex flex-col gap-2">
+                {plugins.length === 0 ? (
+                  <div className="text-sm text-muted-foreground animate-pulse">Loading plugins...</div>
+                ) : (
+                  plugins.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedPluginId(p.id)}
+                      className={`text-left px-4 py-3 rounded-lg border transition-all ${
+                        selectedPluginId === p.id 
+                          ? 'border-primary bg-primary/5 shadow-sm' 
+                          : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="font-medium text-foreground text-sm">{p.name}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
 
-        {selectedPlugin && (
-          <div className="text-xs text-muted-foreground">
-            <strong>Troubleshooting:</strong> {selectedPlugin.troubleshootingGuide}
+            {selectedPlugin && (
+              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                <div>
+                  <label className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <TerminalIcon size={16} className="text-muted-foreground" />
+                    2. Extract Schema
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Run this command on your machine to extract the raw schema definition:
+                  </p>
+                  <div className="relative group">
+                    <pre className="bg-[#1e1e1e] border border-border p-3 rounded-lg text-xs overflow-x-auto text-[#d4d4d4] font-mono whitespace-pre-wrap">
+                      {selectedPlugin.importCommand}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                  <h4 className="text-xs font-semibold text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mb-1">
+                    <AlertCircleIcon size={14} />
+                    Troubleshooting
+                  </h4>
+                  <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80 leading-relaxed">
+                    {selectedPlugin.troubleshootingGuide}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-muted-foreground">Import Strategy</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <input 
-                type="radio" 
-                name="action" 
-                value="append" 
-                checked={action === 'append'} 
-                onChange={() => setAction('append')}
-                className="accent-primary"
+          {/* Right Column: Editor & Actions */}
+          <div className="w-full md:w-2/3 p-6 flex flex-col gap-4 bg-card">
+            <div className="flex flex-col gap-2 flex-1">
+              <label className="text-sm font-semibold text-foreground flex justify-between items-end">
+                <span>3. Paste Raw Schema</span>
+                <span className="text-xs font-normal text-muted-foreground">Max 1MB</span>
+              </label>
+              <textarea 
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="flex-1 w-full p-4 bg-[#1e1e1e] text-[#d4d4d4] border border-border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder:text-zinc-600"
+                placeholder="Paste the output of the extraction command here..."
+                spellCheck={false}
               />
-              Append to existing diagram
-            </label>
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <input 
-                type="radio" 
-                name="action" 
-                value="replace" 
-                checked={action === 'replace'} 
-                onChange={() => setAction('replace')}
-                className="accent-primary"
-              />
-              Replace entire diagram
-            </label>
-          </div>
-        </div>
+            </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-border mt-2">
-          <button 
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover rounded-md transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleImport}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isLoading ? 'Importing...' : 'Import Schema'}
-          </button>
+            <div className="flex flex-col gap-3 py-4 border-t border-border mt-2">
+              <label className="text-sm font-semibold text-foreground">Import Strategy</label>
+              <div className="flex gap-6 p-4 rounded-lg border border-border bg-surface/30">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="pt-0.5">
+                    <input 
+                      type="radio" 
+                      name="action" 
+                      value="append" 
+                      checked={action === 'append'} 
+                      onChange={() => setAction('append')}
+                      className="w-4 h-4 text-primary bg-surface border-border focus:ring-primary focus:ring-2 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Append</span>
+                    <span className="text-xs text-muted-foreground">Add to existing diagram</span>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="pt-0.5">
+                    <input 
+                      type="radio" 
+                      name="action" 
+                      value="replace" 
+                      checked={action === 'replace'} 
+                      onChange={() => setAction('replace')}
+                      className="w-4 h-4 text-primary bg-surface border-border focus:ring-primary focus:ring-2 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Replace All</span>
+                    <span className="text-xs text-muted-foreground">Overwrite current canvas</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                onClick={onClose}
+                className="px-5 py-2.5 text-sm font-medium text-foreground border border-border bg-surface hover:bg-surface-hover hover:text-foreground rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleImport}
+                disabled={isLoading || !content.trim() || !selectedPluginId}
+                className="px-6 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-50 disabled:hover:shadow-none flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Importing...
+                  </>
+                ) : (
+                  'Run Import'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
