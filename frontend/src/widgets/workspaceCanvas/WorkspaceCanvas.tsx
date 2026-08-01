@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { diagramQueryOptions } from '@/features/diagram/api/queries';
 import { updateDiagram } from '@/features/diagram/api/mutations';
@@ -41,6 +41,7 @@ import { useColumnStore } from '@/features/column/stores/column.store';
 import { useNoteStore } from '@/features/note/stores/note.store';
 import { useRelationshipStore } from '@/features/relationship/stores/relationship.store';
 import { ImportSchemaModal } from '@/features/editor/components/ImportSchemaModal';
+import { Save, Upload, Share2 } from 'lucide-react';
 // import { PropertiesPanel } from '@/widgets/workspace/PropertiesPanel';
 
 // ─── Inner component (uses useReactFlow — must be inside ReactFlowProvider) ───
@@ -76,6 +77,23 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
 
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isMenuOpen]);
 
   // Start empty — useEditorSync populates from DSL on mount
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -491,79 +509,103 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           })}
         />
 
-        <CanvasToolbar
-          {...(!isReadOnly && {
-            onAddTable: handleAddTableFromToolbar,
-            onAddNote: handleAddNoteFromToolbar,
-            onPublish: async () => {
-              const { publishDiagram } = await import('@/features/diagram/api/mutations');
-              try {
-                await publishDiagram(diagramId, diagram!.projectId);
-                Toast.success('Diagram published successfully');
-                queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
-                queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
-              } catch (error: any) {
-                Toast.error('Failed to publish diagram');
-              }
-            },
-            onAutoLayout: handleAutoLayout,
-          })}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onFitView={handleFitView}
-          isSidebarOpen={isOpen}
-          onToggleSidebar={toggleSidebar}
-          onSave={flush}
-          {...(isOwner && {
-            onShare: () => setIsShareOpen(true),
-          })}
-          {...(!isReadOnly && {
-            onImport: () => setIsImportOpen(true),
-          })}
-          showOnlyChanges={showOnlyChanges}
-          onToggleShowChanges={() => setShowOnlyChanges(prev => !prev)}
-        />
+        {/* Top Floating Controls */}
+        <div 
+          className="absolute top-3 inset-x-3 flex items-start pointer-events-none gap-4"
+          style={{ zIndex: 10 }}
+        >
+          {/* Left Column: Spacer to push center exactly into the middle */}
+          <div className="flex-1 min-w-0" />
 
-        {!isReadOnly && (
-          <CanvasContextMenu
-            onAddTable={handleAddTableFromContextMenu}
-            onAddNote={handleAddNoteFromContextMenu}
-            onDeleteTarget={handleDeleteTarget}
-            onSelectAll={handleSelectAll}
-            onFitView={handleFitView}
-            onRenameTable={handleRenameTable}
-            onChangeTableColor={handleChangeTableColor}
-            onChangeRelationshipType={handleChangeRelationshipType}
-          />
-        )}
-
-        <CanvasStatusBar
-          nodeCount={tableCount}
-          autosaveStatus={autosaveStatus}
-          lastSavedAt={lastSavedAt}
-        />
-
-        {/* Top Right: Last Updated Info */}
-        {diagram && (
-          <div 
-            className="absolute top-3 right-3 flex flex-col items-end gap-0.5 bg-card/80 backdrop-blur border border-border px-3 py-1.5 rounded-lg shadow-sm pointer-events-none"
-            style={{ zIndex: 10 }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-foreground font-medium truncate max-w-[200px]" title={diagram.name}>
-                {diagram.name}
-              </span>
-              <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded uppercase tracking-wide">
-                {diagram.versionTag}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              {diagram.updatedByName && <span>By {diagram.updatedByName}</span>}
-              <span>•</span>
-              <span>{new Date(diagram.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
+          {/* Center Column: Toolbar (Fixed Width) */}
+          <div className="shrink-0 pointer-events-auto flex justify-center">
+            <CanvasToolbar
+              {...(!isReadOnly && {
+                onAddTable: handleAddTableFromToolbar,
+                onAddNote: handleAddNoteFromToolbar,
+                onPublish: async () => {
+                  const { publishDiagram } = await import('@/features/diagram/api/mutations');
+                  try {
+                    await publishDiagram(diagramId, diagram!.projectId);
+                    Toast.success('Diagram published successfully');
+                    queryClient.invalidateQueries({ queryKey: diagramKeys.byProject(diagram!.projectId) });
+                    queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
+                  } catch (error: any) {
+                    Toast.error('Failed to publish diagram');
+                  }
+                },
+                onAutoLayout: handleAutoLayout,
+              })}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
+              onFitView={handleFitView}
+              isSidebarOpen={isOpen}
+              onToggleSidebar={toggleSidebar}
+              showOnlyChanges={showOnlyChanges}
+              onToggleShowChanges={() => setShowOnlyChanges(prev => !prev)}
+            />
           </div>
-        )}
+
+          {/* Right Column: Actions & Metadata (Shrinks to prevent overlap) */}
+          <div className="flex-1 min-w-0 flex justify-end items-start gap-2 pointer-events-auto">
+            {/* Metadata */}
+            {diagram && (
+              <div className="flex flex-col justify-center items-end gap-0.5 bg-card/80 backdrop-blur border border-border px-3 h-10 rounded-lg shadow-sm pointer-events-none min-w-0">
+                <div className="flex items-center gap-2 max-w-full">
+                  <span className="text-xs text-foreground font-medium truncate" title={diagram.name}>
+                    {diagram.name}
+                  </span>
+                  <span className="shrink-0 w-[76px] text-center whitespace-nowrap px-1 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded uppercase tracking-wide">
+                    {diagram.versionTag}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap max-w-full">
+                  {diagram.updatedByName && (
+                    <span className="truncate" title={`By ${diagram.updatedByName}`}>
+                      By {diagram.updatedByName}
+                    </span>
+                  )}
+                  <span className="shrink-0">•</span>
+                  <span className="shrink-0">{new Date(diagram.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Action Menu Dropdown */}
+            <div className="relative shrink-0" ref={menuRef}>
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center justify-center gap-1.5 px-3 h-10 bg-card/80 backdrop-blur border border-border rounded-lg shadow-sm hover:bg-surface-hover text-foreground text-xs font-semibold"
+                >
+                  Menu
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-lg shadow-lg py-1 text-xs text-foreground z-50">
+                    {!isReadOnly && (
+                      <button onClick={() => { flush(); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
+                        <Save size={14} className="text-muted-foreground" />
+                        Save Changes
+                      </button>
+                    )}
+                    {!isReadOnly && (
+                      <button onClick={() => { setIsImportOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
+                        <Upload size={14} className="text-muted-foreground" />
+                        Import Schema
+                      </button>
+                    )}
+                    {isOwner && (
+                      <button onClick={() => { setIsShareOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
+                        <Share2 size={14} className="text-muted-foreground" />
+                        Share Project
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+          </div>
+        </div>
       </div>
 
       {/* Right: Properties panel */}

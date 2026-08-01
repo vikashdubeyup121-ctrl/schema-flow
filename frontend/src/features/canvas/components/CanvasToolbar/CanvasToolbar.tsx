@@ -13,6 +13,7 @@ import {
   AutoLayoutIcon,
   ChevronDownIcon,
 } from '@/shared/icons';
+import { Send } from 'lucide-react';
 
 interface CanvasToolbarProps {
   onAddTable?: (() => void) | undefined;
@@ -23,9 +24,6 @@ interface CanvasToolbarProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onPublish?: (() => void) | undefined;
-  onShare?: (() => void) | undefined;
-  onImport?: (() => void) | undefined;
-  onSave?: (() => void) | undefined;
   onAutoLayout?: ((direction: string) => void) | undefined;
   showOnlyChanges?: boolean;
   onToggleShowChanges?: () => void;
@@ -124,9 +122,6 @@ export function CanvasToolbar({
   isSidebarOpen,
   onToggleSidebar,
   onPublish,
-  onShare,
-  onImport,
-  onSave,
   onAutoLayout,
   showOnlyChanges,
   onToggleShowChanges,
@@ -135,8 +130,7 @@ export function CanvasToolbar({
 
   return (
     <div
-      className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-card border border-border rounded-lg px-2 py-1.5 shadow-lg"
-      style={{ zIndex: 10 }}
+      className="flex items-center h-10 gap-0.5 bg-card border border-border rounded-lg px-2 shadow-lg pointer-events-auto"
     >
       {/* Sidebar toggle */}
       <ToolButton
@@ -203,39 +197,13 @@ export function CanvasToolbar({
 
       <Divider />
 
-      {onShare && (
-        <button
-          onClick={onShare}
-          className="ml-1 h-8 px-3 bg-secondary text-secondary-foreground border border-border text-xs font-semibold rounded-md hover:bg-surface-hover transition-colors shadow-sm"
-        >
-          Share
-        </button>
-      )}
-
-      {onImport && (
-        <button
-          onClick={onImport}
-          className="ml-1 h-8 px-3 bg-secondary text-secondary-foreground border border-border text-xs font-semibold rounded-md hover:bg-surface-hover transition-colors shadow-sm"
-        >
-          Import
-        </button>
-      )}
-
       {onPublish && (
         <button
           onClick={onPublish}
-          className="ml-1 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 ml-1 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-colors shadow-sm"
         >
+          <Send size={14} />
           Publish
-        </button>
-      )}
-
-      {onSave && (
-        <button
-          onClick={onSave}
-          className="ml-1 h-8 px-3 bg-blue-600 text-white text-xs font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          Save
         </button>
       )}
     </div>
