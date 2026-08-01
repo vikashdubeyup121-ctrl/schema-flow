@@ -5,7 +5,11 @@ export class PostgresParserPlugin implements IParserPlugin {
   name = 'PostgreSQL (Raw SQL)';
 
   getImportCommand(): string {
-    return `pg_dump -s -U your_user -d your_db > schema.sql\n# Then copy the contents of the generated schema.sql file.`;
+    return `Option 1: Extract from a local/remote Postgres host:
+pg_dump -h <host> -p <port> -U <user> -d <dbname> --schema-only --no-owner --no-privileges > schema.sql
+
+Option 2: Extract using a Connection String (e.g. Neon, Supabase, Render):
+pg_dump "postgres://user:password@host:port/dbname" --schema-only --no-owner --no-privileges > schema.sql`;
   }
 
   getTroubleshootingGuide(): string {
@@ -69,6 +73,24 @@ export class PostgresParserPlugin implements IParserPlugin {
       throw new Error('No `CREATE TABLE` statements found. Please ensure the SQL is valid.');
     }
 
-    return dslTables.join('\n');
+    const dslRefs: string[] = [];
+    const alterTableRegex = /ALTER\s+TABLE\s+(?:ONLY\s+)?(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s+ADD\s+CONSTRAINT\s+[a-zA-Z0-9_]+\s+FOREIGN\s+KEY\s*\(([a-zA-Z0-9_]+)\)\s+REFERENCES\s+(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\(([a-zA-Z0-9_]+)\)/gi;
+    
+    let refMatch;
+    while ((refMatch = alterTableRegex.exec(content)) !== null) {
+      const sourceTable = refMatch[1];
+      const sourceColumn = refMatch[2];
+      const targetTable = refMatch[3];
+      const targetColumn = refMatch[4];
+      
+      dslRefs.push(`Ref: ${sourceTable}.${sourceColumn} > ${targetTable}.${targetColumn}`);
+    }
+
+    let finalDsl = dslTables.join('\n');
+    if (dslRefs.length > 0) {
+      finalDsl += '\n\n' + dslRefs.join('\n');
+    }
+
+    return finalDsl;
   }
 }
