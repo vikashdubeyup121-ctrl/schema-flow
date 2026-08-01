@@ -41,7 +41,8 @@ import { useColumnStore } from '@/features/column/stores/column.store';
 import { useNoteStore } from '@/features/note/stores/note.store';
 import { useRelationshipStore } from '@/features/relationship/stores/relationship.store';
 import { ImportSchemaModal } from '@/features/editor/components/ImportSchemaModal';
-import { Save, Upload, Share2 } from 'lucide-react';
+import { ExportSchemaModal } from '@/features/export';
+import { Save, Upload, Share2, Download } from 'lucide-react';
 // import { PropertiesPanel } from '@/widgets/workspace/PropertiesPanel';
 
 // ─── Inner component (uses useReactFlow — must be inside ReactFlowProvider) ───
@@ -77,6 +78,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
 
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -595,6 +597,12 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
                         Import Schema
                       </button>
                     )}
+                    {!isReadOnly && (
+                      <button onClick={() => { setIsExportOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
+                        <Download size={14} className="text-muted-foreground" />
+                        Export Schema
+                      </button>
+                    )}
                     {isOwner && (
                       <button onClick={() => { setIsShareOpen(true); setIsMenuOpen(false); }} className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-surface-hover font-medium">
                         <Share2 size={14} className="text-muted-foreground" />
@@ -629,6 +637,15 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: diagramKeys.detail(diagramId) });
           }}
+        />
+      )}
+
+      {isExportOpen && (
+        <ExportSchemaModal
+          isOpen={isExportOpen}
+          onClose={() => setIsExportOpen(false)}
+          dslText={dslText}
+          diagramName={diagram?.name || 'diagram'}
         />
       )}
     </div>
