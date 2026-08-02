@@ -80,7 +80,9 @@ export class DiagramRepository {
         data,
         include: { 
           updatedByUser: { select: { name: true } },
-          versions: true 
+          versions: {
+            include: { publishedByUser: { select: { name: true, email: true } } }
+          }
         },
       });
 
@@ -276,6 +278,12 @@ export class DiagramRepository {
           latestPublishedVersionId: publishedVersion.id,
           activeDraftVersionId: newDraft.id,
           publishedDslText: diagram.dslText,
+        },
+        include: {
+          updatedByUser: { select: { name: true } },
+          versions: {
+            include: { publishedByUser: { select: { name: true, email: true } } }
+          }
         }
       });
     });
