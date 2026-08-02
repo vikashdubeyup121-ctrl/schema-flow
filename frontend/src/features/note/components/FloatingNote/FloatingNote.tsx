@@ -1,7 +1,7 @@
 import { memo, useCallback, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { useNoteStore } from '../../stores/note.store';
 import { useCanvasSelectionStore } from '@/features/canvas/stores/canvasSelection.store';
-import { REVIEW_STATE_COLORS, CANVAS } from '@/features/canvas/constants/canvas.constants';
+import { CANVAS } from '@/features/canvas/constants/canvas.constants';
 import { NoteHeader } from './NoteHeader';
 import { NoteBody } from './NoteBody';
 import type { FloatingNoteProps } from './FloatingNote.types';
@@ -75,13 +75,9 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
 
   if (!note) return null;
 
-  const reviewColor = REVIEW_STATE_COLORS[note.reviewState];
-  const borderStyle =
-    note.reviewState !== 'published'
-      ? `2px solid ${reviewColor}`
-      : isSelected
-        ? '2px solid hsl(var(--selected))'
-        : '1px solid hsl(var(--border))';
+  const borderStyle = isSelected
+    ? '2px solid hsl(var(--selected))'
+    : '1px solid hsl(var(--border))';
 
   return (
     <div
@@ -95,7 +91,6 @@ export const FloatingNote = memo(function FloatingNote({ noteId }: FloatingNoteP
         minHeight: CANVAS.NOTE_MIN_HEIGHT,
         width: note.width,
         height: note.height,
-        opacity: note.reviewState === 'deleted' ? 0.6 : 1,
       }}
     >
       <NoteHeader 
