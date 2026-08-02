@@ -202,11 +202,12 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const handleRestoreVersion = useCallback(async () => {
     if (!previewVersion || !diagram) return;
     try {
-      await updateDiagram({
+      await updateDiagram(
         diagramId,
-        projectId: diagram.projectId,
-        dslText: previewVersion.dslText || '',
-      });
+        undefined,
+        diagram.projectId,
+        previewVersion.dslText || ''
+      );
       setDraftBackup(null);
       setPreviewVersion(null);
       Toast.success(`Restored to v${previewVersion.versionNumber}.0`);
