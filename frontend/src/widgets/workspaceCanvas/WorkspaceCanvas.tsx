@@ -258,9 +258,9 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   );
 
   const { status: autosaveStatus, lastSavedAt, flush } = useCanvasAutosave({
-    isDirty: isDirty && !isReadOnly,
+    isDirty: isDirty && !isReadOnly && !previewVersion,
     onSave: async () => {
-      if (diagram && !isReadOnly) {
+      if (diagram && !isReadOnly && !previewVersion) {
         const nodesData: Record<string, {x: number, y: number}> = {};
         nodes.forEach((n) => {
           if (n.type === 'table' || n.type === 'note') {
