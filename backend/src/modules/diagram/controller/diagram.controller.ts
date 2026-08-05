@@ -49,6 +49,18 @@ export class DiagramController {
     }
   };
 
+  
+  getVersion = async (req: FastifyRequest<{ Params: { id: string, versionId: string } }>, reply: FastifyReply) => {
+    const user = (req as any).user;
+    try {
+      const version = await this.diagramService.getVersion(user.userId, req.params.id, req.params.versionId);
+      reply.send({ success: true, data: version });
+    } catch (err: any) {
+      const status = err.message === 'VERSION_NOT_FOUND' || err.message === 'DIAGRAM_NOT_FOUND' ? 404 : err.message === 'FORBIDDEN' ? 403 : 500;
+      reply.status(status).send({ success: false, error: { code: err.message, message: err.message } });
+    }
+  };
+
   update = async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const user = (req as any).user;
     const result = UpdateDiagramSchema.safeParse(req.body);

@@ -1,6 +1,11 @@
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 export function LoginPage(): ReactNode {
+  useEffect(() => {
+    document.title = 'Login | SchemaFlow';
+  }, []);
+
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Left Column: Hero / Branding */}

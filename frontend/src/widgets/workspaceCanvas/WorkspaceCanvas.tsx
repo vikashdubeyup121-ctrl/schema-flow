@@ -1,8 +1,10 @@
 // @ts-nocheck
+import { Link } from 'react-router-dom';
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { diagramQueryOptions } from '@/features/diagram/api/queries';
 import { updateDiagram } from '@/features/diagram/api/mutations';
+import { fetchVersionById, versionQueryOptions } from '@/features/diagram/api/queries';
 import { diagramKeys } from '@/features/diagram/api/keys';
 import { queryClient } from '@/shared/api/queryClient';
 import {
@@ -73,6 +75,15 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const isOwner = project?.ownerId === user?.id;
   const userRole = isOwner ? 'OWNER' : myMember?.role || 'VIEWER';
   
+  
+  useEffect(() => {
+    if (diagram) {
+      document.title = `${diagram.name} | SchemaFlow`;
+    } else {
+      document.title = 'Workspace | SchemaFlow';
+    }
+  }, [diagram?.name]);
+
   const isDataLoading = isDiagramLoading || (!!diagram?.projectId && (isProjectLoading || isMembersLoading));
   
   // Default to false while loading to allow initialization, then re-evaluate
@@ -107,6 +118,7 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
   const [showOnlyChanges, setShowOnlyChanges] = useState(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState(false);
   const [previewVersion, setPreviewVersion] = useState<any>(null);
+  const [isVersionLoading, setIsVersionLoading] = useState(false);
   const [draftBackup, setDraftBackup] = useState<string | null>(null);
 
   const handleDownloadImage = async () => {
@@ -185,18 +197,39 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
     onDirty: () => setIsDirty(true),
   });
 
-  const handlePreviewVersion = useCallback((version: any) => {
+  const handlePreviewVersion = useCallback(async (version: any) => {
     if (!previewVersion) setDraftBackup(dslText);
-    setPreviewVersion(version);
-    onDslChange(version.dslText || '');
-  }, [dslText, onDslChange, previewVersion]);
+    try {
+      setIsVersionLoading(true);
+      const fullVersion = await queryClient.fetchQuery(versionQueryOptions(diagramId, version.id));
+      setPreviewVersion({ ...version, ...fullVersion });
+      
+      // Defer the heavy onDslChange to allow the browser to paint the loader
+      setTimeout(() => {
+        onDslChange(fullVersion.dslText || '');
+        // Hide loader after ReactFlow has time to process the new nodes
+        setTimeout(() => {
+          setIsVersionLoading(false);
+        }, 300);
+      }, 50);
+    } catch (e) {
+      setIsVersionLoading(false);
+      import('@/shared/stores/toast.store').then(m => m.Toast.error('Failed to load version details'));
+    }
+  }, [diagramId, dslText, onDslChange, previewVersion, queryClient]);
 
   const handleExitPreview = useCallback(() => {
-    if (draftBackup !== null) {
-      onDslChange(draftBackup);
-    }
-    setPreviewVersion(null);
-    setDraftBackup(null);
+    setIsVersionLoading(true);
+    setTimeout(() => {
+      if (draftBackup !== null) {
+        onDslChange(draftBackup);
+      }
+      setPreviewVersion(null);
+      setDraftBackup(null);
+      setTimeout(() => {
+        setIsVersionLoading(false);
+      }, 300);
+    }, 50);
   }, [draftBackup, onDslChange]);
 
   const handleRestoreVersion = useCallback(async () => {
@@ -626,6 +659,15 @@ function WorkspaceCanvasInner({ diagramId }: WorkspaceCanvasInnerProps): ReactNo
 
       {/* Center: Canvas */}
       <div className="relative flex-1 overflow-hidden">
+        {isVersionLoading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium text-foreground">Loading version...</p>
+            </div>
+          </div>
+        )}
+
         {isPreviewMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-primary/10 border border-primary text-primary px-6 py-3 rounded-full shadow-lg flex items-center gap-6 backdrop-blur-md">
             <span className="font-semibold text-sm">

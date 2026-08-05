@@ -27,6 +27,16 @@ export class DiagramService {
     return diagram;
   }
 
+  
+  async getVersion(userId: string, diagramId: string, versionId: string): Promise<any> {
+    const diagram = await this.diagramRepository.findById(diagramId);
+    if (!diagram) throw new Error('DIAGRAM_NOT_FOUND');
+    await this.projectService.findById(userId, diagram.projectId, 'VIEWER');
+    const version = await this.diagramRepository.findVersionById(versionId);
+    if (!version || version.diagramId !== diagramId) throw new Error('VERSION_NOT_FOUND');
+    return version;
+  }
+
   async update(userId: string, id: string, dto: UpdateDiagramDto): Promise<Diagram> {
     await this.get(userId, id, 'EDITOR'); // validates ownership and existence
     return this.diagramRepository.update(id, { ...dto, updatedBy: userId });

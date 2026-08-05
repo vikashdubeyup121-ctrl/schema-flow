@@ -1,22 +1,21 @@
 import { useState, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/app/providers/AuthProvider';
-import { Avatar } from '@/shared/components/Avatar';
 import { Button } from '@/shared/components/Button';
+import { AppHeader } from '@/shared/components/layout/AppHeader';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useProjectStore } from '@/features/project/stores/project.store';
-import { useThemeStore } from '@/shared/stores/theme.store';
 import {
   AddIcon,
   ProjectIcon,
   DiagramIcon,
-  LogOutIcon,
+
   ChevronDownIcon,
   ChevronRightIcon,
-  SunIcon,
-  MoonIcon,
+
+
 } from '@/shared/icons';
 import {
   ProjectCard,
@@ -139,9 +138,9 @@ function DiagramSection({ projectId, onNavigate, onDeleteRequest }: DiagramSecti
 // ─── Main DashboardWidget ─────────────────────────────────────────────────────
 
 export function DashboardWidget(): ReactNode {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { resolvedTheme, setTheme } = useThemeStore();
+  
   const { projects, isLoading, isError, refetch } = useProjects();
   const { create, update, remove } = useProjectMutations();
   const { remove: removeDiagram } = useDiagramMutations();
@@ -184,50 +183,7 @@ export function DashboardWidget(): ReactNode {
   return (
     <div className="min-h-screen bg-background">
       {/* Top nav */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <LayersLogo />
-            <span className="text-base font-semibold text-foreground">SchemaFlow</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              leftIcon={<AddIcon size={14} />}
-              onClick={() => setCreateOpen(true)}
-            >
-              New Project
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                aria-label="Toggle theme"
-                title="Toggle theme"
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-              >
-                {resolvedTheme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              </button>
-              <button
-                onClick={() => navigate('/profile')}
-                title="View Profile"
-                className="hover:opacity-80 transition-opacity"
-              >
-                <Avatar src={user?.avatarUrl ?? null} name={user?.name ?? ''} size="sm" />
-              </button>
-              <button
-                onClick={() => { void logout(); }}
-                aria-label="Log out"
-                title="Log out"
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-              >
-                <LogOutIcon size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main content */}
       <main className="mx-auto max-w-7xl px-6 py-8">
@@ -404,12 +360,4 @@ export function DashboardWidget(): ReactNode {
 }
 
 // Inline SVG logo to avoid icon dependency
-function LayersLogo(): ReactNode {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-      <polyline points="2 17 12 22 22 17" />
-      <polyline points="2 12 12 17 22 12" />
-    </svg>
-  );
-}
+

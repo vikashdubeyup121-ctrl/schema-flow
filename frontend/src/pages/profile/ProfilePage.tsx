@@ -1,10 +1,14 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { Avatar } from '@/shared/components/Avatar';
 import { Button } from '@/shared/components/Button';
 import { useNavigate } from 'react-router-dom';
 
 export function ProfilePage(): ReactNode {
+  useEffect(() => {
+    document.title = 'Profile | SchemaFlow';
+  }, []);
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 

@@ -54,9 +54,17 @@ export class DiagramRepository {
       include: { 
         updatedByUser: { select: { name: true } },
         versions: {
-          include: { publishedByUser: { select: { name: true, email: true } } }
+          select: { id: true, diagramId: true, versionNumber: true, status: true, basedOnVersionId: true, createdBy: true, publishedBy: true, revisionNumber: true, createdAt: true, publishedAt: true, publishedByUser: { select: { name: true, email: true } } }
         } 
       },
+    });
+  }
+
+  
+  async findVersionById(versionId: string): Promise<any | null> {
+    return this.prisma.diagramVersion.findFirst({
+      where: { id: versionId },
+      include: { publishedByUser: { select: { name: true, email: true } } }
     });
   }
 
@@ -66,7 +74,7 @@ export class DiagramRepository {
       include: { 
         updatedByUser: { select: { name: true } },
         versions: {
-          include: { publishedByUser: { select: { name: true, email: true } } }
+          select: { id: true, diagramId: true, versionNumber: true, status: true, basedOnVersionId: true, createdBy: true, publishedBy: true, revisionNumber: true, createdAt: true, publishedAt: true, publishedByUser: { select: { name: true, email: true } } }
         }
       },
       orderBy: { updatedAt: 'desc' },
@@ -81,7 +89,7 @@ export class DiagramRepository {
         include: { 
           updatedByUser: { select: { name: true } },
           versions: {
-            include: { publishedByUser: { select: { name: true, email: true } } }
+            select: { id: true, diagramId: true, versionNumber: true, status: true, basedOnVersionId: true, createdBy: true, publishedBy: true, revisionNumber: true, createdAt: true, publishedAt: true, publishedByUser: { select: { name: true, email: true } } }
           }
         },
       });
@@ -282,7 +290,7 @@ export class DiagramRepository {
         include: {
           updatedByUser: { select: { name: true } },
           versions: {
-            include: { publishedByUser: { select: { name: true, email: true } } }
+            select: { id: true, diagramId: true, versionNumber: true, status: true, basedOnVersionId: true, createdBy: true, publishedBy: true, revisionNumber: true, createdAt: true, publishedAt: true, publishedByUser: { select: { name: true, email: true } } }
           }
         }
       });

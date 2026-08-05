@@ -29,6 +29,7 @@ export const diagramRoutes: FastifyPluginAsync = async (app) => {
   app.get('/projects/:projectId/diagrams', controller.list);
   
   app.get('/diagrams/:id', controller.get);
+  app.get('/diagrams/:id/versions/:versionId', controller.getVersion);
   app.patch('/diagrams/:id', controller.update);
   app.delete('/diagrams/:id', controller.delete);
   app.patch('/diagrams/:id/viewport', controller.saveViewport);

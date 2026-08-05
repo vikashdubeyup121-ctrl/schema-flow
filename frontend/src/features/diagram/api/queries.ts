@@ -40,3 +40,18 @@ export const diagramQueryOptions = (diagramId: string) =>
     staleTime: 5 * 60 * 1000,
     enabled: !!diagramId,
   });
+
+
+export async function fetchVersionById(diagramId: string, versionId: string): Promise<any> {
+  const response = await apiClient.get<any>(`/diagrams/${diagramId}/versions/${versionId}`);
+  return response.data;
+}
+
+
+export const versionQueryOptions = (diagramId: string, versionId: string) =>
+  queryOptions({
+    queryKey: diagramKeys.version(diagramId, versionId),
+    queryFn: () => fetchVersionById(diagramId, versionId),
+    staleTime: Infinity, // Versions are immutable
+    enabled: !!diagramId && !!versionId,
+  });
